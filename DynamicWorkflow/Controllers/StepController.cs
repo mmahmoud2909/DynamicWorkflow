@@ -1,0 +1,41 @@
+﻿using DynamicWorkflow.Core.Entities;
+using DynamicWorkflow.Core.Enums;
+using DynamicWorkflow.Infrastructure.Repositories;
+using DynamicWorkflow.Services.Services;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Mvc;
+
+namespace DynamicWorkflow.APIs.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class StepController : ControllerBase
+    {
+        private readonly StepService _stepService;
+        public StepController(StepService stepService)
+        {
+            _stepService = stepService;
+        }
+
+        //[HttpGet]
+        //public object GetAllSteps()
+        //{
+        //    var result = _stepService.GetAllSteps(Workflow );
+        //}
+
+        [HttpGet("{id}")]
+        public IActionResult GetWorkflowById(int id)
+        {
+            var workflow = WorkflowRepository.GetWorkflow();
+            return Ok(workflow);
+        }
+
+        [HttpPost("{workflowId}/step/{stepId}/action")]
+        public IActionResult MakeAction(int workflowId, int stepId, [FromQuery]ActionType action)
+        {
+            var workflow = WorkflowRepository.GetWorkflow();
+            _stepService.MakeAction(workflow, stepId, action);
+            return Ok(workflow);
+        }
+    }
+}
