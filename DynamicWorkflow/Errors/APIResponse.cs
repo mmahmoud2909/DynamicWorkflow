@@ -1,0 +1,25 @@
+﻿namespace DynamicWorkflow.APIs.Errors
+{
+    public class APIResponse
+    {
+        public int StatusCode { get; set; }
+        public string Message { get; set; }
+        public APIResponse(int statusCode, string? message = null)
+        {
+            StatusCode = statusCode;
+            Message = message ?? GetDefaultMessageForStatusCode(statusCode);
+        }
+
+        private string? GetDefaultMessageForStatusCode(int statusCode)
+        {
+            return statusCode switch
+            {
+                400 => "A bad request , you have made",
+                401 => "Authorized , you are not",
+                404 => "Rescource was not found",
+                500 => "Errors are the path to the dark side . Error lead to anger . Anger lead to hate . hate lead to career change",
+                _ => null
+            };
+        }
+    }
+}
