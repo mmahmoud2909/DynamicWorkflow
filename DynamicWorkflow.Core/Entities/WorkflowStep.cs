@@ -14,6 +14,9 @@ namespace DynamicWorkflow.Core.Entities
         public Status stepStatus { get; set; } = Status.Pending;
         public ActionType stepActionTypes { get; set; }
         public bool isEndStep {  get; set; }
+        public Roles AssignedRole { get; set; }
+
+
         public WorkflowStep() { }
         public WorkflowStep(string stepName, string comments, Status stepStatus, ActionType stepActionTypes)
         {
