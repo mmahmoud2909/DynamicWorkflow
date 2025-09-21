@@ -1,3 +1,4 @@
+using DynamicWorkflow.APIs.Extenstions;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services;
@@ -5,6 +6,7 @@ using DynamicWorkflow.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -20,38 +22,13 @@ namespace DynamicWorkflow.APIs
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.(builder.Configuration);
-
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                        ValidAudience = builder.Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]))
-                    };
-                });
-            #region Configure services
-            // Add services to the dependency injection container.
-
-            builder.Services.AddControllers();
-            builder.Services.AddControllers().AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-            });
-            #endregion
+            builder.Services.AddAuthServices(builder.Configuration);
+            builder.Services.AddApplicationsService(builder.Configuration);
+            builder.Services.AddEndpointsApiExplorer();
+            
             //// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             //builder.Services.AddOpenApi();
             
-            builder.Services.AddScoped<StepService>();
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Dynamic Workflow API", Version = "v1" });
@@ -72,13 +49,57 @@ namespace DynamicWorkflow.APIs
                 });
             }
 
+            app.UseExceptionHandler(errorApp =>
+            {
+                errorApp.Run(async context =>
+                {
+                    context.Response.StatusCode = 500;
+                    var exceptionHandlerPathFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+
+                    if (exceptionHandlerPathFeature?.Error != null)
+                    {
+                        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+                        logger.LogError(exceptionHandlerPathFeature.Error, "Unhandled exception occurred.");
+                    }
+                });
+            });
+
+            app.Use(async (context, next) =>
+            {
+                context.Request.EnableBuffering();
+                await next();
+            });
 
             app.UseHttpsRedirection();
+            app.UseRouting();
 
+            var webRootPath = app.Environment.WebRootPath;
+            if (string.IsNullOrEmpty(webRootPath))
+            {
+                // Fallback to default wwwroot path
+                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+
+            var uploadsPath = Path.Combine(webRootPath, "uploads");
+            if (!Directory.Exists(uploadsPath))
+            {
+                Directory.CreateDirectory(uploadsPath);
+            }
+
+            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads")),
+                RequestPath = "/uploads"
+            });
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapControllers();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
 
             app.Run();
         }
