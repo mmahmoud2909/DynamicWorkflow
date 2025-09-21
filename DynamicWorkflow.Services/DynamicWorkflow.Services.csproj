@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DynamicWorkflow.Core\DynamicWorkflow.Core.csproj" />
     <ProjectReference Include="..\DynamicWorkflow.Infrastructure\DynamicWorkflow.Infrastructure.csproj" />
   </ItemGroup>

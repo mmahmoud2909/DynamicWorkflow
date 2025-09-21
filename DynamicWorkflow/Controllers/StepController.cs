@@ -1,5 +1,6 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Enums;
+using DynamicWorkflow.Core.Factories;
 using DynamicWorkflow.Infrastructure.Repositories;
 using DynamicWorkflow.Services.Services;
 using Microsoft.AspNetCore;
@@ -31,11 +32,20 @@ namespace DynamicWorkflow.APIs.Controllers
         }
 
         [HttpPost("{workflowId}/step/{stepId}/action")]
-        public IActionResult MakeAction(int workflowId, int stepId, [FromQuery]ActionType action)
+        public IActionResult MakeAction(int workflowId, int stepId, [FromQuery] ActionType action)
         {
             var workflow = WorkflowRepository.GetWorkflow();
             _stepService.MakeAction(workflow, stepId, action);
             return Ok(workflow);
+        }
+
+        [HttpGet("start/{role}")]
+       
+        public IActionResult StartWorkflowAccordingToRole(Roles role)
+        {
+            var workflow =DynamicWorkflowFactory.CreateWorkflow(role);
+            return Ok(workflow);
+
         }
     }
 }
