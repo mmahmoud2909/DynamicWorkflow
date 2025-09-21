@@ -15,7 +15,8 @@ namespace DynamicWorkflow.Core.Entities
         public ActionType stepActionTypes { get; set; }
         public bool isEndStep {  get; set; }
         public Roles AssignedRole { get; set; }
-
+        
+        public ICollection<WorkflowTransition> transitions { get; set; }=new List<WorkflowTransition>();
 
         public WorkflowStep() { }
         public WorkflowStep(string stepName, string comments, Status stepStatus, ActionType stepActionTypes)
