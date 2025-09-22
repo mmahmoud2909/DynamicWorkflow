@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DynamicWorkflow.Core.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,8 @@ namespace DynamicWorkflow.Core.Entities
         public Workflow? Workflow { get; set; }
 
         public int CurrentStepId { get; set; }
-        public WorkflowStep? CurrentStep { get; set; }
+        public Status InstanceStatus {  get; set; }
+        public WorkflowStep ?CurrentStep { get; set; }
+
     }
 }
