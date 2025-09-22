@@ -10,6 +10,9 @@ namespace DynamicWorkflow.Core.Interfaces
 {
     public interface IWorkflow
     {
-        public Task MakeAction (Workflow workflow, int stepId, ActionType action);
+        //public Task MakeAction (Workflow workflow, int stepId, ActionType action);
+        public Task<WorkflowInstance?> GetByIdAsync(int id);
+        public Task SaveAsync(WorkflowInstance instance);
+
     }
 }

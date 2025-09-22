@@ -10,6 +10,7 @@
     <PackageReference Include="AutoMapper" Version="15.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
     <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.9" />
+    <PackageReference Include="stateless" Version="5.20.0" />
   </ItemGroup>
 
 </Project>
