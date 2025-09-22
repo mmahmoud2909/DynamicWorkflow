@@ -9,7 +9,7 @@ namespace DynamicWorkflow.Core.Entities
     public class WorkFlowInstanceStep:BaseEntity
     {
         public int InstanceId { get; set; }
-        public WorkflowInstance Instance { get; set; }
+        public WorkflowInstance ?Instance { get; set; }
 
         public int StepId { get; set; }
         public WorkflowStep Step { get; set; }
