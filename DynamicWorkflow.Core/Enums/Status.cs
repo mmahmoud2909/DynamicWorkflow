@@ -8,6 +8,7 @@ namespace DynamicWorkflow.Core.Enums
 {
     public enum Status
     {
+        Created,
         Accepted,
         Rejected,
         ONHold,
