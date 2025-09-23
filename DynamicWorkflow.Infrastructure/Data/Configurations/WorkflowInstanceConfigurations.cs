@@ -17,7 +17,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
         {
             builder.ToTable("WorkflowInstances").HasKey(t => t.Id);
             //Property Instance Status[Enum]
-            builder.Property(i => i.InstanceStatus).HasConversion<int>()  // store enum as int
+            builder.Property(i => i.State).HasConversion<int>()  // store enum as int
                .HasDefaultValue(Status.Pending)
                .IsRequired();
             //relationship instances have the same workflow
@@ -29,18 +29,6 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.HasOne(ins => ins.CurrentStep)
                 .WithMany().HasForeignKey(f=>f.CurrentStepId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
-          
-       
-
-
-
-
-
-
-
-
-            
         }
     }
 }

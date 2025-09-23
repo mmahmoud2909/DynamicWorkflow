@@ -1,6 +1,5 @@
 ﻿using DynamicWorkflow.Core.Enums;
 using DynamicWorkflow.Services.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DynamicWorkflow.APIs.Controllers
@@ -9,29 +8,33 @@ namespace DynamicWorkflow.APIs.Controllers
     [ApiController]
     public class WorkflowsController : ControllerBase
     {
-        private readonly WorkflowService _service;
-        public WorkflowsController(WorkflowService service) => _service = service;
+        private readonly IWorkflowService _service;
+
+        public WorkflowsController(IWorkflowService service)
+        {
+            _service = service;
+        }
 
         [HttpPost("{id}/trigger/{trigger}")]
-        public async Task<IActionResult> Trigger(Guid id, ActionType action)
+        public async Task<IActionResult> Trigger(int id, ActionType action)
         {
-            await _service.TriggerAsync(id, action);
+            await _service.TriggerAsync(id, action, "mariam");
             return Ok();
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> Create([FromQuery] string user)
+        public async Task<IActionResult> Create()
         {
-            var wf = await _service.CreateWorkflow(user);
+            var wf = await _service.CreateWorkflow(1);
             return Ok(wf);
         }
 
-        [HttpPost("{id}/fire")]
-        public async Task<IActionResult> Fire(Guid id, [FromQuery] ActionType action, [FromQuery] string user)
-        {
-            var wf = await _service.(id, action, user);
-            return Ok(wf);
-        }
+        //[HttpPost("{id}/fire")]
+        //public async Task<IActionResult> Fire( [FromQuery] ActionType action, [FromQuery] string user)
+        //{
+        //    var wf = await _service.TriggerAsync(1, action, user);
+        //    return Ok(wf);
+        //}
     }
 
 }

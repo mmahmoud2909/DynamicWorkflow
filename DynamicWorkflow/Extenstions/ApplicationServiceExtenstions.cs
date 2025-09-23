@@ -1,16 +1,13 @@
-﻿using AutoMapper;
-using DynamicWorkflow.Core.Entities.Users;
+﻿using DynamicWorkflow.Core.Entities.Users;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Core.Interfaces.Repositories;
-using DynamicWorkflow.Core.Mapping;
+using DynamicWorkflow.Infrastructure.Data;
 using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Infrastructure.Repositories;
 using DynamicWorkflow.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -32,6 +29,9 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<StepService>();
             services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<IStateMachineFactory, StateMachineFactory>();
+            services.AddScoped<IWorkflowService, WorkflowService>();
+            services.AddScoped<IWorkflow, WorkflowRepository>();
 
             // This automatically scans for and registers all Profile classes
             // Or register specific profiles

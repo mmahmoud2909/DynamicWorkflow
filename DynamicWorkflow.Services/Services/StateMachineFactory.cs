@@ -10,8 +10,8 @@ namespace DynamicWorkflow.Services.Services
         public StateMachine<Status, ActionType> Create(WorkflowInstance instance, Action<Status> onStateChanged)
         {
             var sm = new StateMachine<Status, ActionType>(
-                () => instance.state,         // getter
-                s => instance.state = s       // setter
+                () => instance.State,         // getter
+                s => instance.State = s       // setter
             );
 
             sm.Configure(Status.Pending)

@@ -51,5 +51,24 @@ namespace DynamicWorkflow.Services.Services
             return (Task)result;
         }
 
+        public Task<WorkflowInstance?> GetByIdAsync(int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SaveAsync(WorkflowInstance instance)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task AddAsync(WorkflowInstance instance)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task UpdateAsync(WorkflowInstance instance)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

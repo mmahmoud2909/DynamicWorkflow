@@ -7,8 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Data\DataSeeding\" />
-    <Folder Include="Data\Migrations\" />
+    <Compile Remove="Data\DataSeeding\**" />
+    <Compile Remove="Data\Migrations\**" />
+    <EmbeddedResource Remove="Data\DataSeeding\**" />
+    <EmbeddedResource Remove="Data\Migrations\**" />
+    <None Remove="Data\DataSeeding\**" />
+    <None Remove="Data\Migrations\**" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,47 +2,60 @@
 using DynamicWorkflow.Core.Enums;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
-using DynamicWorkflow.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DynamicWorkflow.Infrastructure.Data
 {
     public class WorkflowRepository : IWorkflow
     {
         private readonly ApplicationIdentityDbContext _db;
+        private static Workflow? _workflow;
 
         public WorkflowRepository(ApplicationIdentityDbContext db) => _db = db;
 
-        public Task<WorkflowInstance?> GetByIdAsync(Guid id) =>
-            _db.WorkflowInstances.FindAsync(id).AsTask();
-
-        public Task MakeAction(Workflow workflow, int stepId, ActionType action)
+        public async Task<WorkflowInstance?> GetByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            return await _db.WorkflowInstances
+                .Include(w => w.Workflow)
+                .Include(w => w.CurrentStep)
+                .FirstOrDefaultAsync(w => w.Id == id);
+        }
+        public async Task AddAsync(WorkflowInstance instance)
+        {
+            await _db.WorkflowInstances.AddAsync(instance);
+            await _db.SaveChangesAsync();
+        }
+        public async Task UpdateAsync(WorkflowInstance instance)
+        {
+            _db.WorkflowInstances.Update(instance);
+            await _db.SaveChangesAsync();
         }
 
         public async Task SaveAsync(WorkflowInstance instance)
         {
-            _db.Update(instance);
+            _db.Entry(instance).State = EntityState.Modified;
             await _db.SaveChangesAsync();
         }
 
-        public async Task AddAsync(WorkflowInstance instance)
+        public static Workflow GetWorkflow()
         {
-            _db.Workflows.Add(instance);
-            await _db.SaveChangesAsync();
-        }
+            if (_workflow != null) return _workflow;
 
-        public async Task UpdateAsync(WorkflowInstance instance)
-        {
-            _db.Workflows.Update(instance);
-            await _db.SaveChangesAsync();
+            _workflow = new Workflow
+            {
+                Id = 1,
+                name = "Vacation Request Workflow",
+                description = "Vacation requested due to Gradution Party for class 2025",
+                steps = new List<WorkflowStep>
+                {
+                new WorkflowStep { Id = 1, stepName = "Vacation Request", stepActionTypes = ActionType.Create, stepStatus = Status.InProgress },
+                new WorkflowStep { Id = 2, stepName = "N+1 Approval", stepActionTypes = ActionType.Hold, stepStatus = Status.ONHold  },
+                new WorkflowStep { Id = 3, stepName = "Manager Approval", stepActionTypes = ActionType.Skip, stepStatus = Status.Skipped  },
+                new WorkflowStep { Id = 4, stepName = "HR Validation", stepActionTypes = ActionType.Reject, stepStatus = Status.Rejected}
+                }
+            };
+
+            return _workflow;
         }
     }
-
 }
