@@ -92,8 +92,6 @@ namespace DynamicWorkflow.Services.Services
         {
             Email = model.Email,
             UserName = model.UserName,
-            FirstName = model.FirstName,
-            LastName = model.LastName,
             DisplayName = model.DisplayName,
             ProfilePicUrl = picUrl
         };

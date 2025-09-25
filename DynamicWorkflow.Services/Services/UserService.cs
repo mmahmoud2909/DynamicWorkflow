@@ -40,9 +40,6 @@ namespace DynamicWorkflow.Services.Services
 
             //await UpdateUserImageAsync(dto, user);
 
-            user.FirstName = dto.FirstName ?? user.FirstName;
-            user.LastName = dto.LastName ?? user.LastName;
-
             var result = await _userManager.UpdateAsync(user);
             _logger.LogInfo(nameof(UserService), result.Succeeded ? "UpdateUser succeeded" : "UpdateUser failed");
 
@@ -86,8 +83,6 @@ namespace DynamicWorkflow.Services.Services
             {
                 Id =user.Id,
                 UserName = user.UserName,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
                 Email = user.Email,
                 PasswordHash = user.PasswordHash,
                 ProfilePicUrl = user.ProfilePicUrl,
