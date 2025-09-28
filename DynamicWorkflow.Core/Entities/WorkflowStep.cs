@@ -1,4 +1,5 @@
-﻿using DynamicWorkflow.Core.Enums;
+﻿using DynamicWorkflow.Core.Entities.Users;
+using DynamicWorkflow.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace DynamicWorkflow.Core.Entities
 		public Roles AssignedRole { get; set; }
 		public Workflow workflow { get; set; }
 		public int WorkflowId {  get; set; }
-
+		
 		public ICollection<WorkflowTransition> IncomingTransitions { get; set; }=new List<WorkflowTransition>();
 		public ICollection<WorkflowTransition> OutgoingTransitions { get; set; } = new List<WorkflowTransition>();
 		public ICollection<WorkFlowInstanceStep> InstanceSteps { get; set; } = new List<WorkFlowInstanceStep>();

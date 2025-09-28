@@ -32,12 +32,14 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddScoped<IStateMachineFactory, StateMachineFactory>();
             services.AddScoped<IWorkflowService, WorkflowService>();
             services.AddScoped<IWorkflow, WorkflowRepository>();
+            services.AddScoped<IAdminUserService, AdminUserService>();
+            services.AddScoped<IAdminWorkflowService, AdminWorkflowService>();
 
             // This automatically scans for and registers all Profile classes
             // Or register specific profiles
             services.AddAutoMapper(cfg =>
             {
-                cfg.AddProfile<DynamicWorkflow.Core.Mapping.MappingProfile>();
+                cfg.AddProfile<Core.Mapping.MappingProfile>();
             });
 
             services.AddCors();
@@ -67,9 +69,9 @@ namespace DynamicWorkflow.APIs.Extenstions
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-                        .AddJwtBearer(options =>
-                        {
-                            options.TokenValidationParameters = new TokenValidationParameters
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
                             {
                                 ValidateIssuer = true,
                                 ValidateAudience = true,
@@ -80,7 +82,12 @@ namespace DynamicWorkflow.APIs.Extenstions
                                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
                                 RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
                             };
-                        });
+            });
+
+            services.AddAuthorization(options => 
+            {
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+            });
             return services;
         }
     }
