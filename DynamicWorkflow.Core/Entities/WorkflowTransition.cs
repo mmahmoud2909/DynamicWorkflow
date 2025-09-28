@@ -19,7 +19,7 @@ namespace DynamicWorkflow.Core.Entities
         public Status FromState { get; set; }
         public Status ToState { get; set; }
         public DateTime Timestamp { get; set; }
-        public string PerformedBy { get; set; }
+        public string? PerformedBy { get; set; }
 
     }
 }

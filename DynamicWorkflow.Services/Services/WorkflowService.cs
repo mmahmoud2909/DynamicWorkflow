@@ -1,7 +1,6 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Enums;
 using DynamicWorkflow.Core.Interfaces;
-using Microsoft.AspNet.Identity;
 
 namespace DynamicWorkflow.Services.Services
 {

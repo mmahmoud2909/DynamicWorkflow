@@ -6,11 +6,11 @@ namespace DynamicWorkflow.APIs.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class WorkflowsController : ControllerBase
+    public class WorkflowController : ControllerBase
     {
         private readonly IWorkflowService _service;
 
-        public WorkflowsController(IWorkflowService service)
+        public WorkflowController(IWorkflowService service)
         {
             _service = service;
         }
@@ -20,13 +20,6 @@ namespace DynamicWorkflow.APIs.Controllers
         {
             await _service.TriggerAsync(id, action, "mariam");
             return Ok();
-        }
-
-        [HttpPost("create")]
-        public async Task<IActionResult> Create()
-        {
-            var wf = await _service.CreateWorkflow(1);
-            return Ok(wf);
         }
 
         //[HttpPost("{id}/fire")]

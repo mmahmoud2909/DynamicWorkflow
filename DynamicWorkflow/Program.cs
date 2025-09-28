@@ -1,18 +1,6 @@
 using DynamicWorkflow.APIs.Extenstions;
-using DynamicWorkflow.Core.Interfaces;
-using DynamicWorkflow.Infrastructure.Identity;
-using DynamicWorkflow.Services;
-using DynamicWorkflow.Services.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerUI;
-using System.Text;
-using System.Text.Json.Serialization;
 
 namespace DynamicWorkflow.APIs
 {

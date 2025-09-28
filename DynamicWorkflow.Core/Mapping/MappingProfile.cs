@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
+using DynamicWorkflow.Core.DTOs.Department;
+using DynamicWorkflow.Core.DTOs.StepDto;
 using DynamicWorkflow.Core.DTOs.User;
+using DynamicWorkflow.Core.DTOs.Workflow;
 using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DynamicWorkflow.Core.Mapping
 {
@@ -18,6 +15,11 @@ namespace DynamicWorkflow.Core.Mapping
             CreateMap<RegisterModel, RegisterDto>().ReverseMap();
             CreateMap<LoginModel, LoginDto>().ReverseMap();
             CreateMap<ApplicationUser, UserDto>().ReverseMap();
+            CreateMap<CreateUserDto, ApplicationUser>().ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email));
+            CreateMap<Department, DepartmentDto>();
+            CreateMap<CreateDepartmentDto, Department>();
+            CreateMap<Workflow, WorkflowDto>();
+            CreateMap<WorkflowStep, WorkflowStepDto>();
         }
     }
 }
