@@ -118,6 +118,28 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
                 );
                 await context.SaveChangesAsync();
             }
+            // 6. Admin
+            var adminEmail = "admin@sys.com";
+            if (await userManager.FindByEmailAsync(adminEmail) == null)
+            {
+                var admin = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    NormalizedEmail = adminEmail.ToUpper(),
+                    NormalizedUserName = adminEmail.ToUpper(),
+                    DisplayName = "System Administrator",
+                    RegisteredAt = DateTime.UtcNow,
+                    DepartmentId = itDept.Id 
+                };
+
+                var result = await userManager.CreateAsync(admin, "Admin@123"); 
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(admin, "Admin");
+                }
+            }
+
 
 
         }
