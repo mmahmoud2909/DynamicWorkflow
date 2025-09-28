@@ -11,6 +11,6 @@ namespace DynamicWorkflow.Core.Entities
     {
         public Guid Id { get; set; }
         public string Name {  get; set; }
-        public ICollection<ApplicationUser> Users = new HashSet<ApplicationUser>();
+        public ICollection<ApplicationUser> Users { get; set; } = new HashSet<ApplicationUser>();
     }
 }
