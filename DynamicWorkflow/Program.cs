@@ -13,10 +13,10 @@ namespace DynamicWorkflow.APIs
             builder.Services.AddAuthServices(builder.Configuration);
             builder.Services.AddApplicationsService(builder.Configuration);
             builder.Services.AddEndpointsApiExplorer();
-            
+          
             //// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             //builder.Services.AddOpenApi();
-            
+
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Dynamic Workflow API", Version = "v1" });
@@ -25,6 +25,11 @@ namespace DynamicWorkflow.APIs
 
 
             var app = builder.Build();
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                await ApplicationdbcontextSeed.SeedDataAsync(services);
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
