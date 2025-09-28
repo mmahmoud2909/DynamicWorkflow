@@ -77,7 +77,7 @@ namespace DynamicWorkflow.APIs.Extenstions
                                 ValidateAudience = true,
                                 ValidateLifetime = true,
                                 ValidateIssuerSigningKey = true,
-                                ValidIssuer = configuration["Jwt:Issuer"],
+                                ValidIssuer = "https://localhost:7180",
                                 ValidAudience = configuration["Jwt:Audience"],
                                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
                                 RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"

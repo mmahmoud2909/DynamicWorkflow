@@ -1,4 +1,5 @@
 using DynamicWorkflow.APIs.Extenstions;
+using DynamicWorkflow.Infrastructure.DataSeeding;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
@@ -21,8 +22,30 @@ namespace DynamicWorkflow.APIs
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Dynamic Workflow API", Version = "v1" });
                 c.UseInlineDefinitionsForEnums();
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter 'Bearer' [space] and then your valid token.\n\nExample: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI..."
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
             });
-
 
             var app = builder.Build();
             using (var scope = app.Services.CreateScope())
@@ -86,6 +109,7 @@ namespace DynamicWorkflow.APIs
                     Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads")),
                 RequestPath = "/uploads"
             });
+
             app.UseAuthentication();
             app.UseAuthorization();
 
