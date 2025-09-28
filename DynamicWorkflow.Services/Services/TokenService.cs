@@ -17,10 +17,10 @@ public class TokenService : ITokenService
     {
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId),   // user Id
-            new Claim(JwtRegisteredClaimNames.UniqueName, userName), // username
-            new Claim(ClaimTypes.Role, role),            // role
-            new Claim(ClaimTypes.Role, "Admin")
+            new Claim(JwtRegisteredClaimNames.Sub, userId),
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(JwtRegisteredClaimNames.UniqueName, userName),
+            new Claim(ClaimTypes.Role, role)
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Token:Key"]));
@@ -28,9 +28,9 @@ public class TokenService : ITokenService
 
         var token = new JwtSecurityToken(
             issuer: _config["Token:Issuer"],
-            audience: _config["Token:Issuer"], // you can use null if you don’t validate audience
+            audience: _config["Token:Audience"], // you can use null if you don’t validate audience
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
+            expires: DateTime.UtcNow.AddMonths(1),
             signingCredentials: creds
         );
 

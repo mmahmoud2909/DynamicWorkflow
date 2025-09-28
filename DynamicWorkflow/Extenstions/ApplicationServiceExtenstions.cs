@@ -86,7 +86,7 @@ namespace DynamicWorkflow.APIs.Extenstions
 
             services.AddAuthorization(options => 
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN"));
             });
             return services;
         }
