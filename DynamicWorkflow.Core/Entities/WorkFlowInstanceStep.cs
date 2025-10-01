@@ -13,6 +13,8 @@ namespace DynamicWorkflow.Core.Entities
 
         public int StepId { get; set; }
         public WorkflowStep Step { get; set; }
+        public WorkflowInstanceAction WorkflowInstanceAction { get; set; }
+
 
         public string? PerformedByUserId { get; set; }  
         public string Status { get; set; } = "Pending"; // Pending, Completed, Rejected

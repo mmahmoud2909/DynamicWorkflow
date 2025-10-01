@@ -33,7 +33,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
                 .WithOne(wf=>wf.workflow)
                 .HasForeignKey(wfk=>wfk.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
-            //one Workflow has Many Transitions
+            //one Workflow has Many Instances
             builder.HasMany(wf => wf.Instances)
                 .WithOne(ins => ins.Workflow)
                 .HasForeignKey(wfi => wfi.WorkflowId)

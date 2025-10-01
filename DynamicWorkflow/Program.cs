@@ -1,5 +1,7 @@
 using DynamicWorkflow.APIs.Extenstions;
+using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.DataSeeding;
+using DynamicWorkflow.Services;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
@@ -14,7 +16,8 @@ namespace DynamicWorkflow.APIs
             builder.Services.AddAuthServices(builder.Configuration);
             builder.Services.AddApplicationsService(builder.Configuration);
             builder.Services.AddEndpointsApiExplorer();
-          
+            builder.Services.AddScoped<IworkflowInstanceService, WorkflowInstanceServices>();
+
             //// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             //builder.Services.AddOpenApi();
 

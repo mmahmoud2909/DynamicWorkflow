@@ -1,7 +1,9 @@
 ﻿using DynamicWorkflow.Core.Enums;
+using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 namespace DynamicWorkflow.APIs.Controllers
 {
@@ -10,10 +12,12 @@ namespace DynamicWorkflow.APIs.Controllers
     public class WorkflowInstancesController : ControllerBase
     {
         private readonly WorkflowInstanceServices _instanceServices;
+        private readonly ApplicationIdentityDbContext _Context;
 
-        public WorkflowInstancesController(WorkflowInstanceServices instanceServices)
+        public WorkflowInstancesController(WorkflowInstanceServices instanceServices,ApplicationIdentityDbContext Context)
         {
             _instanceServices = instanceServices;
+            _Context = Context;
         }
 
         // User creates a new workflow instance
@@ -55,6 +59,27 @@ namespace DynamicWorkflow.APIs.Controllers
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var instances = await _instanceServices.GetInstancesForUserAsync(userId);
             return Ok(instances);
+        }
+        // ✅ Get instance with history (steps + actions)
+        [HttpGet("{instanceId}/history")]
+        [Authorize]
+        public async Task<IActionResult> GetInstanceHistory(int instanceId)
+        {
+            var instance = await _instanceServices.GetInstanceByIdAsync(instanceId);
+
+            if (instance == null)
+                return NotFound();
+
+            var history = await _Context.WorkFlowInstanceSteps
+                .Where(s => s.InstanceId == instanceId)
+                .Include(s => s.Step)
+                .ToListAsync();
+
+            var actions = await _Context.WorkflowInstancesAction
+                .Where(a => a.WorkflowInstanceId == instanceId)
+                .ToListAsync();
+
+            return Ok(new { instance, history, actions });
         }
     }
 }
