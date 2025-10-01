@@ -13,12 +13,12 @@ public class TokenService : ITokenService
         _config = config;
     }
 
-    public string CreateToken(string userId, string userName, string role)
+    public string CreateToken(Guid userId, string userName, string role)
     {
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId),
-            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.UniqueName, userName),
             new Claim(ClaimTypes.Role, role)
         };

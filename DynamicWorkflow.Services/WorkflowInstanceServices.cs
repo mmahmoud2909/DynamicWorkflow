@@ -22,13 +22,13 @@ namespace DynamicWorkflow.Services
         public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, Guid userId)
         {
             var workflow = await _context.Workflows
-                .Include(w => w.steps)
+                .Include(w => w.Steps)
                 .FirstOrDefaultAsync(wf => wf.Id == workflowId);
 
             if (workflow == null)
                 throw new Exception("Workflow not found");
 
-            var firstStep = workflow.steps.OrderBy(stp => stp.Id).FirstOrDefault();
+            var firstStep = workflow.Steps.OrderBy(stp => stp.Id).FirstOrDefault();
             if (firstStep == null)
                 throw new Exception("Workflow has no steps");
 

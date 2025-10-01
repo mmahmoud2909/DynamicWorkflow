@@ -15,9 +15,9 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
         {
             builder.ToTable("WorkflowSteps").HasKey(spk=>spk.Id);
             //property StepName
-            builder.Property(s=>s.stepName).IsRequired().HasMaxLength(200);
+            builder.Property(s=>s.Name).IsRequired().HasMaxLength(200);
             //Property Comments
-            builder.Property(s=>s.comments).HasMaxLength(2000);
+            builder.Property(s=>s.Comments).HasMaxLength(2000);
             //Property Step Status StepStatus[Enum]
             builder.Property(s => s.stepStatus).HasConversion<int>().IsRequired();
             //property Assigned Role[Enum]
@@ -28,7 +28,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             //relationships
             //One Workflow Has Many Steps
             builder.HasOne(s=>s.workflow)
-                .WithMany(w=>w.steps)
+                .WithMany(w=>w.Steps)
                 .HasForeignKey(s=>s.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
             //each Step has Many WorkflowInstances

@@ -15,16 +15,16 @@ namespace DynamicWorkflow.APIs.Controllers
         SignInManager<ApplicationUser> _signInManager,
         IAccountService _accountService) : ApiController
     {
-        // POST : api/account/register
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromForm] RegisterDto model)
-        {
-            var registerModel = _mapper.Map<RegisterModel>(model);
-            var (isSuccess, message, token) = await _accountService.RegisterUserAsync(registerModel);
-            if (!isSuccess)
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Status = "Error", Message = message });
-            return Ok(new { Status = "Success", Message = message, Token = token });
-        }
+        //// POST : api/account/register
+        //[HttpPost("register")]
+        //public async Task<IActionResult> Register([FromForm] RegisterDto model)
+        //{
+        //    var registerModel = _mapper.Map<RegisterModel>(model);
+        //    var (isSuccess, message, token) = await _accountService.RegisterUserAsync(registerModel);
+        //    if (!isSuccess)
+        //        return StatusCode(StatusCodes.Status500InternalServerError, new { Status = "Error", Message = message });
+        //    return Ok(new { Status = "Success", Message = message, Token = token });
+        //}
 
         // POST : api/account/login
         [HttpPost("login")]

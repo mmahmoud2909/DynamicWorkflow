@@ -11,14 +11,14 @@ namespace DynamicWorkflow.Core.Factories
             Roles.Employee => new Workflow
             {
                 Id = 1,
-                name = "Vacation Request Workflow",
-                description = "Vaccation Approval Cycle",
-                steps = new List<WorkflowStep>
+                Name = "Vacation Request Workflow",
+                Description = "Vaccation Approval Cycle",
+                Steps = new List<WorkflowStep>
                     {
                         new WorkflowStep
                         {
                             Id = 1,
-                            stepName = "Employee Request for Vaccation",
+                            Name = "Employee Request for Vaccation",
                             stepActionTypes = ActionType.Create,
                             stepStatus = Status.InProgress,
                             AssignedRole = Roles.Employee,
@@ -28,7 +28,7 @@ namespace DynamicWorkflow.Core.Factories
                         new WorkflowStep
                         {
                             Id = 2,
-                            stepName = "Manager Approval",
+                            Name = "Manager Approval",
                             stepActionTypes = ActionType.Accept,
                             stepStatus = Status.Pending,
                             AssignedRole = Roles.Manager,
@@ -37,7 +37,7 @@ namespace DynamicWorkflow.Core.Factories
                         new WorkflowStep
                         {
                             Id = 3,
-                            stepName = "HR Approval",
+                            Name = "HR Approval",
                             stepActionTypes = ActionType.Accept,
                             stepStatus = Status.Accepted,
                             AssignedRole = Roles.HR,
@@ -48,14 +48,14 @@ namespace DynamicWorkflow.Core.Factories
             Roles.Manager => new Workflow
             {
                 Id = 2,
-                name = "Manager Request Vaccation",
-                description = "Manager Approval Cycle",
-                steps = new List<WorkflowStep>
+                Name = "Manager Request Vaccation",
+                Description = "Manager Approval Cycle",
+                Steps = new List<WorkflowStep>
                     {
                         new WorkflowStep
                         {
                             Id = 1,
-                            stepName="Manager Request For Vaccation",
+                            Name="Manager Request For Vaccation",
                             stepActionTypes= ActionType.Create,
                             stepStatus = Status.Pending,
                             AssignedRole = Roles.Manager,
@@ -64,7 +64,7 @@ namespace DynamicWorkflow.Core.Factories
                         new WorkflowStep
                         {
                             Id = 1,
-                            stepName="HR Approval",
+                            Name="HR Approval",
                             stepActionTypes= ActionType.Accept,
                             stepStatus = Status.Accepted,
                             AssignedRole = Roles.HR,
@@ -75,14 +75,14 @@ namespace DynamicWorkflow.Core.Factories
             Roles.HR => new Workflow
             {
                 Id = 3,
-                name = "HR Request Vaccation",
-                description = "HR Cycle",
-                steps = new List<WorkflowStep>
+                Name = "HR Request Vaccation",
+                Description = "HR Cycle",
+                Steps = new List<WorkflowStep>
                        {
                            new WorkflowStep
                            {
                                Id = 1,
-                               stepName="HR Approval",
+                               Name="HR Approval",
                                stepActionTypes= ActionType.Accept,
                                stepStatus = Status.InProgress,
                                AssignedRole = Roles.HR,

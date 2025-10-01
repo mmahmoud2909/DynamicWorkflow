@@ -17,18 +17,18 @@ namespace DynamicWorkflow.Services.Services
         public async Task<List<WorkflowDto>> GetAllWorkflowsAsync()
         {
             var list = await _db.Workflows
-                .Include(w => w.steps)
+                .Include(w => w.Steps)
                 .ThenInclude(s => s.InstanceSteps)
                 .ToListAsync();
 
             return list.Select(w => new WorkflowDto(
                 w.Id,
-                w.name,
-                w.description,
-                w.steps.Select(s => new WorkflowStepDto(
+                w.Name,
+                w.Description,
+                w.Steps.Select(s => new WorkflowStepDto(
                     s.Id,
-                    s.stepName,
-                    s.comments,
+                    s.Name,
+                    s.Comments,
                     s.stepStatus,
                     s.stepActionTypes,
                     s.isEndStep,
@@ -40,14 +40,14 @@ namespace DynamicWorkflow.Services.Services
 
         public async Task<WorkflowDto?> GetWorkflowByIdAsync(int id)
         {
-            var w = await _db.Workflows.Include(x => x.steps).FirstOrDefaultAsync(x => x.Id == id);
+            var w = await _db.Workflows.Include(x => x.Steps).FirstOrDefaultAsync(x => x.Id == id);
             if (w == null) return null;
-            return new WorkflowDto(w.Id, w.name, w.description, w.steps.Select(s => new WorkflowStepDto(s.Id, s.stepName, s.comments, s.stepStatus, s.stepActionTypes, s.isEndStep, s.AssignedRole, s.WorkflowId)).ToList());
+            return new WorkflowDto(w.Id, w.Name, w.Description, w.Steps.Select(s => new WorkflowStepDto(s.Id, s.Name, s.Comments, s.stepStatus, s.stepActionTypes, s.isEndStep, s.AssignedRole, s.WorkflowId)).ToList());
         }
 
         public async Task<int> CreateWorkflowAsync(CreateWorkflowDto dto)
         {
-            var w = new Workflow { name = dto.Name, description = dto.Description };
+            var w = new Workflow { Name = dto.Name, Description = dto.Description };
             _db.Workflows.Add(w);
             await _db.SaveChangesAsync();
             return w.Id;
@@ -56,8 +56,8 @@ namespace DynamicWorkflow.Services.Services
         public async Task UpdateWorkflowAsync(int id, CreateWorkflowDto dto)
         {
             var w = await _db.Workflows.FindAsync(id) ?? throw new KeyNotFoundException("Workflow not found");
-            w.name = dto.Name;
-            w.description = dto.Description;
+            w.Name = dto.Name;
+            w.Description = dto.Description;
             await _db.SaveChangesAsync();
         }
 
@@ -74,8 +74,8 @@ namespace DynamicWorkflow.Services.Services
             var wf = await _db.Workflows.FindAsync(workflowId) ?? throw new KeyNotFoundException("Workflow not found");
             var step = new WorkflowStep
             {
-                stepName = dto.stepName,
-                comments = dto.comments,
+                Name = dto.stepName,
+                Comments = dto.comments,
                 stepActionTypes = dto.stepActionTypes,
                 isEndStep = dto.isEndStep,
                 AssignedRole = dto.assignedRole,
@@ -89,8 +89,8 @@ namespace DynamicWorkflow.Services.Services
         public async Task UpdateStepAsync(int stepId, UpdateStepDto dto)
         {
             var step = await _db.WorkflowSteps.FindAsync(stepId) ?? throw new KeyNotFoundException("Step not found");
-            if (dto.stepName is not null) step.stepName = dto.stepName;
-            if (dto.comments is not null) step.comments = dto.comments;
+            if (dto.stepName is not null) step.Name = dto.stepName;
+            if (dto.comments is not null) step.Comments = dto.comments;
             if (dto.assignedRole is not null) step.AssignedRole = dto.assignedRole.Value;
             if (dto.isEndStep.HasValue) step.isEndStep = dto.isEndStep.Value;
             if (dto.stepActionTypes.HasValue) step.stepActionTypes = dto.stepActionTypes.Value;

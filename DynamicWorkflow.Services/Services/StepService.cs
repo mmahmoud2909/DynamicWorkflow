@@ -13,7 +13,7 @@ namespace DynamicWorkflow.Services.Services
     {
         public Task MakeAction(Workflow workflow, int stepId, ActionType action)
         {
-            var step = workflow.steps.FirstOrDefault(s => s.Id == stepId);
+            var step = workflow.Steps.FirstOrDefault(s => s.Id == stepId);
             if (step == null)
             {
                 throw new Exception("Step Does Not Exist");
@@ -47,7 +47,7 @@ namespace DynamicWorkflow.Services.Services
 
         public Task GetAllSteps(Workflow workflow)
         {
-            var result = workflow.steps;
+            var result = workflow.Steps;
             return (Task)result;
         }
 

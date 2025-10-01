@@ -44,14 +44,14 @@ namespace DynamicWorkflow.Infrastructure.Data
             _workflow = new Workflow
             {
                 Id = 1,
-                name = "Vacation Request Workflow",
-                description = "Vacation requested due to Gradution Party for class 2025",
-                steps = new List<WorkflowStep>
+                Name = "Vacation Request Workflow",
+                Description = "Vacation requested due to Gradution Party for class 2025",
+                Steps = new List<WorkflowStep>
                 {
-                new WorkflowStep { Id = 1, stepName = "Vacation Request", stepActionTypes = ActionType.Create, stepStatus = Status.InProgress },
-                new WorkflowStep { Id = 2, stepName = "N+1 Approval", stepActionTypes = ActionType.Hold, stepStatus = Status.ONHold  },
-                new WorkflowStep { Id = 3, stepName = "Manager Approval", stepActionTypes = ActionType.Skip, stepStatus = Status.Skipped  },
-                new WorkflowStep { Id = 4, stepName = "HR Validation", stepActionTypes = ActionType.Reject, stepStatus = Status.Rejected}
+                new WorkflowStep { Id = 1, Name = "Vacation Request", stepActionTypes = ActionType.Create, stepStatus = Status.InProgress },
+                new WorkflowStep { Id = 2, Name = "N+1 Approval", stepActionTypes = ActionType.Hold, stepStatus = Status.ONHold  },
+                new WorkflowStep { Id = 3, Name = "Manager Approval", stepActionTypes = ActionType.Skip, stepStatus = Status.Skipped  },
+                new WorkflowStep { Id = 4, Name = "HR Validation", stepActionTypes = ActionType.Reject, stepStatus = Status.Rejected}
                 }
             };
 

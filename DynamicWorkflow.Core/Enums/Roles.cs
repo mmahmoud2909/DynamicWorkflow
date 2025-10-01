@@ -10,6 +10,17 @@ namespace DynamicWorkflow.Core.Enums
     {
         Employee,
         Manager,
-        HR
+        HR,
+        User,
+        Director,
+        CLevel,
+        Technical,
+        Planning,
+        Treasury,
+        Procurement,
+        Warehouse,
+        QC,
+        Supervisor,
+        StoreKeeper
     }
 }

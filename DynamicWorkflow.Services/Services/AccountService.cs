@@ -10,45 +10,44 @@ using System.Text;
 
 namespace DynamicWorkflow.Services.Services
 {
-    public class AccountService(ILoggingService<string> _logger,UserManager<ApplicationUser> _userManager,
-    IConfiguration _configuration) : IAccountService
+    public class AccountService(ILoggingService<string> _logger,UserManager<ApplicationUser> _userManager, IConfiguration _configuration, ITokenService _tokenService) : IAccountService
     {
-        public async Task<(bool isSuccess, string message, string? token)> RegisterUserAsync(RegisterModel model)
-        {
-            _logger.LogInfo(nameof(AccountService), "RegisterUser called");
+        //public async Task<(bool isSuccess, string message, string? token)> RegisterUserAsync(RegisterModel model)
+        //{
+        //    _logger.LogInfo(nameof(AccountService), "RegisterUser called");
 
-            if (!ArePasswordsMatching(model))
-            {
-                _logger.LogWarning(nameof(AccountService), "RegisterUser, passwords do not match!");
-                return (false, "Password and Confirm Password do not match!", null);
-            }
+        //    if (!ArePasswordsMatching(model))
+        //    {
+        //        _logger.LogWarning(nameof(AccountService), "RegisterUser, passwords do not match!");
+        //        return (false, "Password and Confirm Password do not match!", null);
+        //    }
 
-            if (await IsUserExistsAsync(model.UserName))
-            {
-                _logger.LogWarning(nameof(AccountService), "RegisterUser, user already exists!");
-                return (false, "User already exists!", null);
-            }
+        //    if (await IsUserExistsAsync(model.UserName))
+        //    {
+        //        _logger.LogWarning(nameof(AccountService), "RegisterUser, user already exists!");
+        //        return (false, "User already exists!", null);
+        //    }
 
-            //string? profilePicUrl = await UploadProfilePictureAsync(model.ProfilePicUrl);
-            string? profilePicUrl = null;
-            var user = CreateUserFromModel(model, profilePicUrl);
+        //    //string? profilePicUrl = await UploadProfilePictureAsync(model.ProfilePicUrl);
+        //    string? profilePicUrl = null;
+        //    var user = CreateUserFromModel(model, profilePicUrl);
 
-            var role = IsFirstUser() ? "Admin" : "User";
-            var result = await _userManager.CreateAsync(user, model.Password);
+        //    var role = IsFirstUser() ? "Admin" : "User";
+        //    var result = await _userManager.CreateAsync(user, model.Password);
 
-            if (!result.Succeeded)
-            {
-                var error = result.Errors.FirstOrDefault()?.Description ?? "User creation failed";
-                _logger.LogWarning(nameof(AccountService), $"RegisterUser failed: {error}");
-                return (false, error, null);
-            }
+        //    if (!result.Succeeded)
+        //    {
+        //        var error = result.Errors.FirstOrDefault()?.Description ?? "User creation failed";
+        //        _logger.LogWarning(nameof(AccountService), $"RegisterUser failed: {error}");
+        //        return (false, error, null);
+        //    }
 
-            await _userManager.AddToRoleAsync(user, role);
-            _logger.LogInfo(nameof(AccountService), "RegisterUser succeeded");
+        //    await _userManager.AddToRoleAsync(user, role);
+        //    _logger.LogInfo(nameof(AccountService), "RegisterUser succeeded");
 
-            var token = GenerateJwtToken(user);
-            return (true, "User created successfully!", token);
-        }
+        //    var token = GenerateJwtToken(user);
+        //    return (true, "User created successfully!", token);
+        //}
 
         public async Task<(bool isSuccess, string token, string message, bool isDeletionCancelled)> LoginUserAsync(LoginModel model)
         {
@@ -77,7 +76,11 @@ namespace DynamicWorkflow.Services.Services
                 return (false, null, "Invalid credentials.", false);
             }
 
-            var token = GenerateJwtToken(user);
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? "User";
+
+            var token = _tokenService.CreateToken(user.Id, user.UserName, role);
+            //var token = GenerateJwtToken(user);
             var message = isDeletionCancelled ? "Login successful. Deletion request canceled." : "Login successful.";
 
             _logger.LogInfo(nameof(AccountService), "LoginUser succeeded");
@@ -118,32 +121,32 @@ namespace DynamicWorkflow.Services.Services
             return (false, null, "Account has been deleted.", false);
         }
 
-        private string GenerateJwtToken(ApplicationUser user)
-        {
-            _logger.LogInfo(nameof(AccountService), "GenerateJwtToken called");
+        //private string GenerateJwtToken(ApplicationUser user)
+        //{
+        //    _logger.LogInfo(nameof(AccountService), "GenerateJwtToken called");
 
-            var claims = new List<Claim>
-            {
-                new(JwtRegisteredClaimNames.Sub, user.UserName ?? ""),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+        //    var claims = new List<Claim>
+        //    {
+        //        new(JwtRegisteredClaimNames.Sub, user.UserName ?? ""),
+        //        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        //    };
 
-            var roles = _userManager.GetRolesAsync(user).Result;
-            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        //    var roles = _userManager.GetRolesAsync(user).Result;
+        //    claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+        //    var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                expires: DateTime.Now.AddMonths(3),
-                claims: claims,
-                signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
-            );
+        //    var token = new JwtSecurityToken(
+        //        issuer: _configuration["Jwt:Issuer"],
+        //        audience: _configuration["Jwt:Audience"],
+        //        expires: DateTime.Now.AddMonths(3),
+        //        claims: claims,
+        //        signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
+        //    );
 
-            _logger.LogInfo(nameof(AccountService), "GenerateJwtToken succeeded");
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+        //    _logger.LogInfo(nameof(AccountService), "GenerateJwtToken succeeded");
+        //    return new JwtSecurityTokenHandler().WriteToken(token);
+        //}
 
     }
 }

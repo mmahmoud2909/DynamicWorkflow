@@ -14,6 +14,20 @@ namespace DynamicWorkflow.Core.Enums
         Hold,
         Notify,
         Skip,
-        RequestChanges
+        RequestChanges,
+        SystemApproval,
+        UserApproval,
+        ManagerApproval,
+        DirectorApproval,
+        CLevelApproval,
+        TechnicalApproval,
+        PlanningApproval,
+        TreasuryApproval,
+        ProcurementApproval,
+        WarehouseApproval,
+        QcApproval,
+        GrnGeneration,
+        InvoiceProcessing,
+        FinalApproval
     }
 }
