@@ -110,7 +110,8 @@ namespace DynamicWorkflow.APIs
                     Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads")),
                 RequestPath = "/uploads"
             });
-
+            app.SeedWorkflowData();
+            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -118,8 +119,6 @@ namespace DynamicWorkflow.APIs
             {
                 endpoints.MapControllers();
             });
-
-            app.SeedWorkflowData();
 
             app.Run();
         }

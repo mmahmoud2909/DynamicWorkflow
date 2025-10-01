@@ -50,7 +50,7 @@ namespace DynamicWorkflow.APIs.Extenstions
         public static IServiceCollection AddAuthServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddDbContext<ApplicationIdentityDbContext>(options =>
-             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging());
+             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging(), ServiceLifetime.Scoped);
             services.AddIdentity<ApplicationUser, ApplicationRole>().AddEntityFrameworkStores<ApplicationIdentityDbContext>().AddDefaultTokenProviders();
             //services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             //{
