@@ -74,14 +74,10 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
         public static List<Workflow> GetWorkflows()
         {
             var workflows = new List<Workflow>();
-            var workflowId = 1;
-            var stepId = 1;
-            var transitionId = 1;
 
             // Main Parent Workflow - LV Plant
             var lvPlantWorkflow = new Workflow
             {
-                Id = workflowId++,
                 Name = "LV Plant Workflow",
                 Description = "Complete Low Voltage Plant Approval Process",
                 ParentWorkflowId = null,
@@ -89,128 +85,111 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
             };
             workflows.Add(lvPlantWorkflow);
 
-            // 1. PR Approval Workflow (Child of LV Plant)
-            var prApprovalWorkflow = CreatePRApprovalWorkflow(workflowId++, lvPlantWorkflow.Id, 1, ref stepId, ref transitionId);
+            // Child workflows
+            var prApprovalWorkflow = CreatePRApprovalWorkflow(lvPlantWorkflow, 1);
             workflows.Add(prApprovalWorkflow);
 
-            // 2. PO Approval Workflow (Child of LV Plant)
-            var poApprovalWorkflow = CreatePOApprovalWorkflow(workflowId++, lvPlantWorkflow.Id, 2, ref stepId, ref transitionId);
+            var poApprovalWorkflow = CreatePOApprovalWorkflow(lvPlantWorkflow, 2);
             workflows.Add(poApprovalWorkflow);
 
-            // 3. GRN Acceptance Workflow (Child of LV Plant)
-            var grnAcceptanceWorkflow = CreateGRNAcceptanceWorkflow(workflowId++, lvPlantWorkflow.Id, 3, ref stepId, ref transitionId);
+            var grnAcceptanceWorkflow = CreateGRNAcceptanceWorkflow(lvPlantWorkflow, 3);
             workflows.Add(grnAcceptanceWorkflow);
 
-            // 4. Warehouse Workflow (Child of LV Plant)
-            var warehouseWorkflow = CreateWarehouseWorkflow(workflowId++, lvPlantWorkflow.Id, 4, ref stepId, ref transitionId);
+            var warehouseWorkflow = CreateWarehouseWorkflow(lvPlantWorkflow, 4);
             workflows.Add(warehouseWorkflow);
 
-            // 5. Final Approval Workflow (Child of LV Plant)
-            var finalApprovalWorkflow = CreateFinalApprovalWorkflow(workflowId++, lvPlantWorkflow.Id, 5, ref stepId, ref transitionId);
+            var finalApprovalWorkflow = CreateFinalApprovalWorkflow(lvPlantWorkflow, 5);
             workflows.Add(finalApprovalWorkflow);
 
-            // 6. Invoice Payable Workflow (Child of LV Plant)
-            var invoicePayableWorkflow = CreateInvoicePayableWorkflow(workflowId++, lvPlantWorkflow.Id, 6, ref stepId, ref transitionId);
+            var invoicePayableWorkflow = CreateInvoicePayableWorkflow(lvPlantWorkflow, 6);
             workflows.Add(invoicePayableWorkflow);
 
             return workflows;
         }
 
-        private static Workflow CreatePRApprovalWorkflow(int id, int parentId, int order, ref int stepId, ref int transitionId)
+        private static Workflow CreatePRApprovalWorkflow(Workflow parentWorkflow, int order)
         {
             var workflow = new Workflow
             {
-                Id = id,
                 Name = "PR Approval Workflow",
                 Description = "Purchase Request Approval Process",
-                ParentWorkflowId = parentId,
+                ParentWorkflowId = parentWorkflow.Id,
                 Order = order,
-                Steps = new List<WorkflowStep>(),
-                Transitions = new List<WorkflowTransition>()
+                Steps = new List<WorkflowStep>()
             };
 
             // Step 1: System Approval
             var systemApproval = new WorkflowStep
             {
-                Id = stepId++,
                 Name = "PR System Approval",
                 Order = 1,
                 stepStatus = Status.Pending,
                 stepActionTypes = ActionType.SystemApproval,
                 isEndStep = false,
                 AssignedRole = Roles.User,
-                WorkflowId = id,
                 Roles = new List<StepRole>
                 {
-                    new StepRole { Id = 1, StepId = stepId - 1, RoleName = "System", ActorName = "Automated System", IsMandatory = true }
+                    new StepRole { RoleName = "System", ActorName = "Automated System", IsMandatory = true }
                 }
             };
 
             // Step 2: User Approval
             var userApproval = new WorkflowStep
             {
-                Id = stepId++,
                 Name = "PR User Approval",
                 Order = 2,
                 stepStatus = Status.Pending,
                 stepActionTypes = ActionType.UserApproval,
                 isEndStep = false,
                 AssignedRole = Roles.User,
-                WorkflowId = id,
                 Roles = new List<StepRole>
                 {
-                    new StepRole { Id = 2, StepId = stepId - 1, RoleName = "RM Planning Team Leader", ActorName = "Mariam Shoukry", IsMandatory = true }
+                    new StepRole { RoleName = "RM Planning Team Leader", ActorName = "Mariam Shoukry", IsMandatory = true }
                 }
             };
 
             // Step 3: Manager Approval
             var managerApproval = new WorkflowStep
             {
-                Id = stepId++,
                 Name = "PR Manager Approval",
                 Order = 3,
                 stepStatus = Status.Pending,
                 stepActionTypes = ActionType.ManagerApproval,
                 isEndStep = false,
                 AssignedRole = Roles.Manager,
-                WorkflowId = id,
                 Roles = new List<StepRole>
                 {
-                    new StepRole { Id = 3, StepId = stepId - 1, RoleName = "Planning Manager", ActorName = "Hany Gawish", IsMandatory = true }
+                    new StepRole { RoleName = "Planning Manager", ActorName = "Hany Gawish", IsMandatory = true }
                 }
             };
 
             // Step 4: Director Approval
             var directorApproval = new WorkflowStep
             {
-                Id = stepId++,
                 Name = "PR Director Approval",
                 Order = 4,
                 stepStatus = Status.Pending,
                 stepActionTypes = ActionType.DirectorApproval,
                 isEndStep = false,
                 AssignedRole = Roles.Director,
-                WorkflowId = id,
                 Roles = new List<StepRole>
                 {
-                    new StepRole { Id = 4, StepId = stepId - 1, RoleName = "Plant Director", ActorName = "Mohamed Hawary", IsMandatory = true }
+                    new StepRole { RoleName = "Plant Director", ActorName = "Mohamed Hawary", IsMandatory = true }
                 }
             };
 
             // Step 5: C-Level Approval
             var clevelApproval = new WorkflowStep
             {
-                Id = stepId++,
                 Name = "PR C-Level Approval",
                 Order = 5,
                 stepStatus = Status.Pending,
                 stepActionTypes = ActionType.CLevelApproval,
                 isEndStep = true,
                 AssignedRole = Roles.CLevel,
-                WorkflowId = id,
                 Roles = new List<StepRole>
                 {
-                    new StepRole { Id = 5, StepId = stepId - 1, RoleName = "COO", ActorName = "Mohamed Aboud", IsMandatory = true }
+                    new StepRole { RoleName = "COO", ActorName = "Mohamed Aboud", IsMandatory = true }
                 }
             };
 
@@ -220,29 +199,20 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
             workflow.Steps.Add(directorApproval);
             workflow.Steps.Add(clevelApproval);
 
-            // Create transitions
-            workflow.Transitions.Add(CreateTransition(transitionId++, id, systemApproval.Id, userApproval.Id, ActionType.SystemApproval));
-            workflow.Transitions.Add(CreateTransition(transitionId++, id, userApproval.Id, managerApproval.Id, ActionType.UserApproval));
-            workflow.Transitions.Add(CreateTransition(transitionId++, id, managerApproval.Id, directorApproval.Id, ActionType.ManagerApproval));
-            workflow.Transitions.Add(CreateTransition(transitionId++, id, directorApproval.Id, clevelApproval.Id, ActionType.DirectorApproval));
-
             return workflow;
         }
 
-        private static Workflow CreatePOApprovalWorkflow(int id, int parentId, int order, ref int stepId, ref int transitionId)
+        private static Workflow CreatePOApprovalWorkflow(Workflow parentWorkflow, int order)
         {
             var workflow = new Workflow
             {
-                Id = id,
                 Name = "PO Approval Workflow",
                 Description = "Purchase Order Approval Process",
-                ParentWorkflowId = parentId,
+                ParentWorkflowId = parentWorkflow.Id,
                 Order = order,
-                Steps = new List<WorkflowStep>(),
-                Transitions = new List<WorkflowTransition>()
+                Steps = new List<WorkflowStep>()
             };
 
-            // Steps for PO Approval
             var steps = new[]
             {
                 new { Name = "PO System Approval", Action = ActionType.SystemApproval, Role = Roles.User, RoleName = "System", Actor = "Automated System" },
@@ -259,48 +229,32 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
             {
                 var step = new WorkflowStep
                 {
-                    Id = stepId++,
                     Name = steps[i].Name,
                     Order = i + 1,
                     stepStatus = Status.Pending,
                     stepActionTypes = steps[i].Action,
                     isEndStep = i == steps.Length - 1,
                     AssignedRole = steps[i].Role,
-                    WorkflowId = id,
                     Roles = new List<StepRole>
                     {
-                        new StepRole { Id = stepId, StepId = stepId - 1, RoleName = steps[i].RoleName, ActorName = steps[i].Actor, IsMandatory = true }
+                        new StepRole { RoleName = steps[i].RoleName, ActorName = steps[i].Actor, IsMandatory = true }
                     }
                 };
                 workflow.Steps.Add(step);
             }
 
-            // Create transitions between steps
-            for (int i = 0; i < workflow.Steps.Count - 1; i++)
-            {
-                workflow.Transitions.Add(CreateTransition(
-                    transitionId++,
-                    id,
-                    workflow.Steps.ElementAt(i).Id,
-                    workflow.Steps.ElementAt(i + 1).Id,
-                    workflow.Steps.ElementAt(i).stepActionTypes
-                ));
-            }
-
             return workflow;
         }
 
-        private static Workflow CreateGRNAcceptanceWorkflow(int id, int parentId, int order, ref int stepId, ref int transitionId)
+        private static Workflow CreateGRNAcceptanceWorkflow(Workflow parentWorkflow, int order)
         {
             var workflow = new Workflow
             {
-                Id = id,
                 Name = "GRN Acceptance Workflow",
                 Description = "Goods Received Note Acceptance Process",
-                ParentWorkflowId = parentId,
+                ParentWorkflowId = parentWorkflow.Id,
                 Order = order,
-                Steps = new List<WorkflowStep>(),
-                Transitions = new List<WorkflowTransition>()
+                Steps = new List<WorkflowStep>()
             };
 
             var steps = new[]
@@ -317,47 +271,32 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
             {
                 var step = new WorkflowStep
                 {
-                    Id = stepId++,
                     Name = $"GRN {steps[i].Name}",
                     Order = i + 1,
                     stepStatus = Status.Pending,
                     stepActionTypes = steps[i].Action,
                     isEndStep = i == steps.Length - 1,
                     AssignedRole = steps[i].Role,
-                    WorkflowId = id,
                     Roles = new List<StepRole>
                     {
-                        new StepRole { Id = stepId, StepId = stepId - 1, RoleName = steps[i].RoleName, ActorName = steps[i].Actor, IsMandatory = true }
+                        new StepRole { RoleName = steps[i].RoleName, ActorName = steps[i].Actor, IsMandatory = true }
                     }
                 };
                 workflow.Steps.Add(step);
             }
 
-            for (int i = 0; i < workflow.Steps.Count - 1; i++)
-            {
-                workflow.Transitions.Add(CreateTransition(
-                    transitionId++,
-                    id,
-                    workflow.Steps.ElementAt(i).Id,
-                    workflow.Steps.ElementAt(i + 1).Id,
-                    workflow.Steps.ElementAt(i).stepActionTypes
-                ));
-            }
-
             return workflow;
         }
 
-        private static Workflow CreateWarehouseWorkflow(int id, int parentId, int order, ref int stepId, ref int transitionId)
+        private static Workflow CreateWarehouseWorkflow(Workflow parentWorkflow, int order)
         {
             var workflow = new Workflow
             {
-                Id = id,
                 Name = "Warehouse Workflow",
                 Description = "Warehouse Processing and GRN Generation",
-                ParentWorkflowId = parentId,
+                ParentWorkflowId = parentWorkflow.Id,
                 Order = order,
-                Steps = new List<WorkflowStep>(),
-                Transitions = new List<WorkflowTransition>()
+                Steps = new List<WorkflowStep>()
             };
 
             // Non-metal path
@@ -373,62 +312,45 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
             {
                 var step = new WorkflowStep
                 {
-                    Id = stepId++,
                     Name = stepsNonMetal[i].Name,
                     Order = i + 1,
                     stepStatus = Status.Pending,
                     stepActionTypes = stepsNonMetal[i].Action,
                     isEndStep = i == stepsNonMetal.Length - 1,
                     AssignedRole = stepsNonMetal[i].Role,
-                    WorkflowId = id,
                     Roles = new List<StepRole>
                     {
-                        new StepRole { Id = stepId, StepId = stepId - 1, RoleName = stepsNonMetal[i].RoleName, ActorName = stepsNonMetal[i].Actor, IsMandatory = true }
+                        new StepRole { RoleName = stepsNonMetal[i].RoleName, ActorName = stepsNonMetal[i].Actor, IsMandatory = true }
                     }
                 };
                 workflow.Steps.Add(step);
             }
 
-            for (int i = 0; i < stepsNonMetal.Length - 1; i++)
-            {
-                workflow.Transitions.Add(CreateTransition(
-                    transitionId++,
-                    id,
-                    workflow.Steps.ElementAt(i).Id,
-                    workflow.Steps.ElementAt(i + 1).Id,
-                    workflow.Steps.ElementAt(i).stepActionTypes
-                ));
-            }
-
             return workflow;
         }
 
-        private static Workflow CreateFinalApprovalWorkflow(int id, int parentId, int order, ref int stepId, ref int transitionId)
+        private static Workflow CreateFinalApprovalWorkflow(Workflow parentWorkflow, int order)
         {
             var workflow = new Workflow
             {
-                Id = id,
                 Name = "Final Approval Workflow",
                 Description = "Final System Approval Process",
-                ParentWorkflowId = parentId,
+                ParentWorkflowId = parentWorkflow.Id,
                 Order = order,
-                Steps = new List<WorkflowStep>(),
-                Transitions = new List<WorkflowTransition>()
+                Steps = new List<WorkflowStep>()
             };
 
             var step = new WorkflowStep
             {
-                Id = stepId++,
                 Name = "Final System Approval",
                 Order = 1,
                 stepStatus = Status.Pending,
                 stepActionTypes = ActionType.SystemApproval,
                 isEndStep = true,
                 AssignedRole = Roles.Director,
-                WorkflowId = id,
                 Roles = new List<StepRole>
                 {
-                    new StepRole { Id = stepId, StepId = stepId - 1, RoleName = "Director",  ActorName = "Mohamed Hawary", IsMandatory = true }
+                    new StepRole { RoleName = "Director", ActorName = "Plant Director", IsMandatory = true }
                 }
             };
 
@@ -436,17 +358,15 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
             return workflow;
         }
 
-        private static Workflow CreateInvoicePayableWorkflow(int id, int parentId, int order, ref int stepId, ref int transitionId)
+        private static Workflow CreateInvoicePayableWorkflow(Workflow parentWorkflow, int order)
         {
             var workflow = new Workflow
             {
-                Id = id,
                 Name = "Invoice Payable Workflow",
                 Description = "Invoice Processing and Payment Approval",
-                ParentWorkflowId = parentId,
+                ParentWorkflowId = parentWorkflow.Id,
                 Order = order,
-                Steps = new List<WorkflowStep>(),
-                Transitions = new List<WorkflowTransition>()
+                Steps = new List<WorkflowStep>()
             };
 
             var steps = new[]
@@ -461,50 +381,21 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
             {
                 var step = new WorkflowStep
                 {
-                    Id = stepId++,
                     Name = $"Invoice {steps[i].Name}",
                     Order = i + 1,
                     stepStatus = Status.Pending,
                     stepActionTypes = steps[i].Action,
                     isEndStep = i == steps.Length - 1,
                     AssignedRole = steps[i].Role,
-                    WorkflowId = id,
                     Roles = new List<StepRole>
                     {
-                        new StepRole { Id = stepId, StepId = stepId - 1, RoleName = steps[i].RoleName, ActorName = steps[i].Actor, IsMandatory = true }
+                        new StepRole { RoleName = steps[i].RoleName, ActorName = steps[i].Actor, IsMandatory = true }
                     }
                 };
                 workflow.Steps.Add(step);
             }
 
-            for (int i = 0; i < workflow.Steps.Count - 1; i++)
-            {
-                workflow.Transitions.Add(CreateTransition(
-                    transitionId++,
-                    id,
-                    workflow.Steps.ElementAt(i).Id,
-                    workflow.Steps.ElementAt(i + 1).Id,
-                    workflow.Steps.ElementAt(i).stepActionTypes
-                ));
-            }
-
             return workflow;
-        }
-
-        private static WorkflowTransition CreateTransition(int id, int workflowId, int fromStepId, int toStepId, ActionType action)
-        {
-            return new WorkflowTransition
-            {
-                Id = id,
-                WorkflowId = workflowId,
-                FromStepId = fromStepId,
-                ToStepId = toStepId,
-                Action = action,
-                FromState = Status.Pending,
-                ToState = Status.Pending,
-                Timestamp = DateTime.UtcNow,
-                PerformedBy = "System"
-            };
         }
     }
 }

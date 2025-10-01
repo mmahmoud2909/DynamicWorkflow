@@ -6,7 +6,7 @@ using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace DynamicWorkflow.Services
+namespace DynamicWorkflow.Services.Services
 {
     public class WorkflowInstanceServices : IworkflowInstanceService
     {
