@@ -27,14 +27,9 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.Property(s=>s.isEndStep).IsRequired();
             //relationships
             //One Workflow Has Many Steps
-            builder.HasOne(s=>s.workflow)
-                .WithMany(w=>w.Steps)
-                .HasForeignKey(s=>s.WorkflowId)
-                .OnDelete(DeleteBehavior.Cascade);
-            //each Step has Many WorkflowInstances
-            builder.HasMany(st=>st.InstanceSteps)
-                .WithOne(ins=>ins.Step)
-                .HasForeignKey(s=>s.StepId)
+            builder.HasOne(s => s.workflow)
+                .WithMany(w => w.Steps)
+                .HasForeignKey(s => s.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
             //each step may have many transitions fromstep
             builder.HasMany(st=>st.OutgoingTransitions)
@@ -44,7 +39,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             //each step may have many transitions tostep
             builder.HasMany(st => st.IncomingTransitions)
                 .WithOne(tr => tr.ToStep)
-                .HasForeignKey(sfk => sfk.ToStepId);
+                .HasForeignKey(sfk => sfk.ToStepId).OnDelete(DeleteBehavior.Restrict); ;
         }
     }
 }

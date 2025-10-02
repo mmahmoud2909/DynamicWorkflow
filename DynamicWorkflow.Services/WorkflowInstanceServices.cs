@@ -37,6 +37,7 @@ namespace DynamicWorkflow.Services
                 WorkflowId = workflowId,
                 CurrentStepId = firstStep.Id,
                 State = Status.Pending,
+                CreatedAt = DateTime.UtcNow,
             };
 
             _context.WorkflowInstances.Add(instance);
@@ -55,22 +56,29 @@ namespace DynamicWorkflow.Services
             return instance;
         }
 
+        // Get Instance By Id
         public async Task<WorkflowInstance?> GetInstanceByIdAsync(int instanceId)
         {
             return await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
+                .Include(i => i.Workflow)
                 .FirstOrDefaultAsync(i => i.Id == instanceId);
         }
 
+        //assign specific user to get all instances
         public async Task<IList<WorkflowInstance>> GetInstancesForUserAsync(Guid userId)
         {
             return await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
-                .Where(i => i.Transitions.Any(t => t.PerformedBy == userId.ToString()))
+                .Include(i => i.Workflow)
+                .Where(i => _context.WorkFlowInstanceSteps
+                    .Any(s => s.InstanceId == i.Id && s.PerformedByUserId == userId.ToString()))
                 .ToListAsync();
         }
 
-        public async Task<WorkflowInstance> MoveToNextStepAsync(int instanceId, Guid userId, ActionType action, string? comments = null)
+        //  Move to next Step 
+        public async Task<WorkflowInstance> MoveToNextStepAsync(
+            int instanceId, Guid userId, ActionType action, string? comments = null)
         {
             var instance = await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
@@ -80,17 +88,29 @@ namespace DynamicWorkflow.Services
             if (instance == null)
                 throw new Exception("Instance not found");
 
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                throw new Exception("User not found");
+            //check assigned role
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var requiredRole = instance.CurrentStep.AssignedRole.ToString();
+
+            if (!string.IsNullOrEmpty(requiredRole) && !userRoles.Contains(requiredRole))
+                throw new UnauthorizedAccessException(
+                    $"You are not authorized to perform action on step {instance.CurrentStep.Name}. Required role: {requiredRole}");
+
+
             var transition = instance.CurrentStep.OutgoingTransitions
                 .FirstOrDefault(t => t.Action == action);
 
             if (transition == null)
                 throw new Exception($"No transition found for action {action}");
-
-            // Update workflow instance
+            //Updated instance
             instance.CurrentStepId = transition.ToStepId;
             instance.State = transition.ToState;
 
-            // Save new step in instance history
+            // register in history
             var instanceStep = new WorkFlowInstanceStep
             {
                 InstanceId = instance.Id,
@@ -103,14 +123,21 @@ namespace DynamicWorkflow.Services
 
             _context.WorkFlowInstanceSteps.Add(instanceStep);
 
-            // Save performed transition
-            transition.PerformedBy = userId.ToString();
-            transition.Timestamp = DateTime.UtcNow;
+            //  register Action
+            var actionLog = new WorkflowInstanceAction
+            {
+                WorkflowInstanceId = instance.Id,
+                WorkflowStepId = instance.CurrentStepId,
+                WorkFlowInstanceStepId = instanceStep.Id,
+                PerformedByUserId = userId,
+                ActionType = action,
+                Comments = comments,
+                PerformedAt = DateTime.UtcNow
+            };
+            _context.WorkflowInstancesAction.Add(actionLog);
 
             await _context.SaveChangesAsync();
             return instance;
         }
-
-     
     }
 }

@@ -34,7 +34,7 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddScoped<IWorkflow, WorkflowRepository>();
             services.AddScoped<IAdminUserService, AdminUserService>();
             services.AddScoped<IAdminWorkflowService, AdminWorkflowService>();
-
+            services.AddScoped<IworkflowInstanceService, WorkflowInstanceServices>();
             // This automatically scans for and registers all Profile classes
             // Or register specific profiles
             services.AddAutoMapper(cfg =>
