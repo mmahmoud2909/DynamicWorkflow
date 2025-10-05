@@ -26,6 +26,7 @@ namespace DynamicWorkflow.Infrastructure.Identity
         public DbSet<WorkflowTransition>WorkflowTransitions { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<StepRole> StepRoles { get; set; }
+        public DbSet<WorkflowInstanceAction> WorkflowInstancesAction { get; set; }
 
     }
 }

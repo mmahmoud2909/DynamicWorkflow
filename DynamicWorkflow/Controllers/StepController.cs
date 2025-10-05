@@ -16,10 +16,11 @@ namespace DynamicWorkflow.APIs.Controllers
             _stepService = stepService;
         }
 
-        //[HttpGet]
-        //public object GetAllSteps()
+        //[HttpGet("GetAllStepsByWfId{id}")]
+        //public object getallsteps(int id)
         //{
-        //    var result = _stepService.GetAllSteps(Workflow );
+        //    var result = _stepService.GetAllSteps(id);
+        //    return Ok(result);
         //}
 
         //[HttpGet("{id}")]
