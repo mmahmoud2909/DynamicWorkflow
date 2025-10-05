@@ -39,7 +39,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             //each step may have many transitions tostep
             builder.HasMany(st => st.IncomingTransitions)
                 .WithOne(tr => tr.ToStep)
-                .HasForeignKey(sfk => sfk.ToStepId).OnDelete(DeleteBehavior.Restrict); ;
+                .HasForeignKey(sfk => sfk.ToStepId).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

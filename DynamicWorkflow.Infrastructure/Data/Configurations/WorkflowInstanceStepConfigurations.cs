@@ -1,5 +1,6 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,13 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             //one instance step =>has one instance action 
             builder.HasOne(wfia => wfia.WorkflowInstanceAction).WithOne(wfis => wfis.WorkFlowInstanceStep)
                 .HasForeignKey<WorkflowInstanceAction>(fk => fk.WorkFlowInstanceStepId).OnDelete(DeleteBehavior.Cascade);
-        }
+
+                
+               
+
+                
+           
+
+            }
     }
 }

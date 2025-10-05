@@ -1,6 +1,12 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace DynamicWorkflow.Infrastructure.Data.Configurations
 {
@@ -17,6 +23,11 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             //workflowinstancestep=>has one instance action 
             builder.HasOne(wfia => wfia.WorkFlowInstanceStep).WithOne(wfis => wfis.WorkflowInstanceAction)
                 .HasForeignKey<WorkflowInstanceAction>(wfi => wfi.WorkFlowInstanceStepId);
+                
+
         }
+        
+
+
     }
 }
