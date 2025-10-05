@@ -78,15 +78,15 @@ namespace DynamicWorkflow.APIs.Extenstions
                                 ValidateLifetime = true,
                                 ValidateIssuerSigningKey = true,
                                 ValidIssuer = "https://localhost:7180",
-                                ValidAudience = configuration["Jwt:Audience"],
-                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+                                ValidAudience = configuration["Token:Audience"],
+                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Token:Key"]!)),
                                 RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
                             };
             });
 
             services.AddAuthorization(options => 
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN","Admin"));
             });
             return services;
         }
