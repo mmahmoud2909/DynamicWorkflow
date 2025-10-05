@@ -1,4 +1,5 @@
 ﻿using DynamicWorkflow.Core.Enums;
+using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +12,10 @@ namespace DynamicWorkflow.APIs.Controllers
     [ApiController]
     public class WorkflowInstancesController : ControllerBase
     {
-        private readonly WorkflowInstanceServices _instanceServices;
+        private readonly IworkflowInstanceService _instanceServices;
         private readonly ApplicationIdentityDbContext _Context;
 
-        public WorkflowInstancesController(WorkflowInstanceServices instanceServices,ApplicationIdentityDbContext Context)
+        public WorkflowInstancesController(IworkflowInstanceService instanceServices,ApplicationIdentityDbContext Context)
         {
             _instanceServices = instanceServices;
             _Context = Context;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace DynamicWorkflow.Core.Entities
@@ -9,9 +10,11 @@ namespace DynamicWorkflow.Core.Entities
     public class WorkFlowInstanceStep:BaseEntity
     {
         public int InstanceId { get; set; }
+        [JsonIgnore]
         public WorkflowInstance ?Instance { get; set; }
 
         public int StepId { get; set; }
+        [JsonIgnore]
         public WorkflowStep Step { get; set; }
         public WorkflowInstanceAction WorkflowInstanceAction { get; set; }
 

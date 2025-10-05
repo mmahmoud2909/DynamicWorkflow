@@ -18,7 +18,8 @@ namespace DynamicWorkflow.Services.Services
             _context = context;
             _userManager = userManager;
         }
-         public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, Guid userId)
+
+        public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, Guid userId)
         {
             var workflow = await _context.Workflows
                 .Include(w => w.Steps)
@@ -27,7 +28,8 @@ namespace DynamicWorkflow.Services.Services
             if (workflow == null)
                 throw new Exception("Workflow not found");
 
-            var firstStep = workflow.Steps.OrderBy(stp => stp.Id).FirstOrDefault();
+            // use Step.Order (logical order) instead of Id
+            var firstStep = workflow.Steps.OrderBy(stp => stp.Order).FirstOrDefault();
             if (firstStep == null)
                 throw new Exception("Workflow has no steps");
 
@@ -46,7 +48,7 @@ namespace DynamicWorkflow.Services.Services
             {
                 InstanceId = instance.Id,
                 StepId = firstStep.Id,
-                PerformedByUserId = userId.ToString(),
+                PerformedByUserId = userId.ToString(), // keep as string (existing design)
                 Status = Status.Pending.ToString(),
             };
 
@@ -61,18 +63,39 @@ namespace DynamicWorkflow.Services.Services
             return await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
                 .Include(i => i.Workflow)
+                    .ThenInclude(w => w.Steps)
                 .FirstOrDefaultAsync(i => i.Id == instanceId);
         }
 
-        //assign specific user to get all instances
+        // Return instances currently assigned to the user (by assigned user or by role)
         public async Task<IList<WorkflowInstance>> GetInstancesForUserAsync(Guid userId)
         {
-            return await _context.WorkflowInstances
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null) return new List<WorkflowInstance>();
+
+            var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
+
+            // include current step and its roles
+            var instances = await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
+                    .ThenInclude(s => s.Roles)
                 .Include(i => i.Workflow)
-                .Where(i => _context.WorkFlowInstanceSteps
-                    .Any(s => s.InstanceId == i.Id && s.PerformedByUserId == userId.ToString()))
+                .Where(i =>
+                    // assigned specifically to this user (if AssignedUserId is Guid? on WorkflowStep)
+                    (i.CurrentStep != null && i.CurrentStep.AssignedUserId.HasValue && i.CurrentStep.AssignedUserId.Value == userId)
+                    ||
+                    // or step's enum AssignedRole matches any of user's roles (by name)
+                    (i.CurrentStep != null && i.CurrentStep.AssignedRole != default(Roles) &&
+                        userRoles.Any(ur => string.Equals(ur, i.CurrentStep.AssignedRole.ToString(), StringComparison.OrdinalIgnoreCase)))
+                    ||
+                    // or the step has StepRole entries whose RoleName matches any of user's roles
+                    (i.CurrentStep != null && i.CurrentStep.Roles.Any() &&
+                        i.CurrentStep.Roles.Select(r => r.RoleName).Any(roleName =>
+                            userRoles.Any(ur => string.Equals(ur, roleName, StringComparison.OrdinalIgnoreCase))))
+                )
                 .ToListAsync();
+
+            return instances;
         }
 
         //  Move to next Step 
@@ -82,52 +105,103 @@ namespace DynamicWorkflow.Services.Services
             var instance = await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
                     .ThenInclude(s => s.OutgoingTransitions)
+                .Include(i => i.Workflow)
+                    .ThenInclude(w => w.Steps)
                 .FirstOrDefaultAsync(i => i.Id == instanceId);
 
             if (instance == null)
-                throw new Exception("Instance not found");
+                throw new KeyNotFoundException("Instance not found");
 
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
-                throw new Exception("User not found");
-            //check assigned role
+                throw new KeyNotFoundException("User not found");
 
-            var userRoles = await _userManager.GetRolesAsync(user);
-            var requiredRole = instance.CurrentStep.AssignedRole.ToString();
+            // currentStep 
+            var currentStep = instance.CurrentStep ?? instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId);
+            if (currentStep == null)
+                throw new InvalidOperationException("Current step not found");
 
-            if (!string.IsNullOrEmpty(requiredRole) && !userRoles.Contains(requiredRole))
-                throw new UnauthorizedAccessException(
-                    $"You are not authorized to perform action on step {instance.CurrentStep.Name}. Required role: {requiredRole}");
+            // get user roles
+            var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
 
-            
-            var transition = instance.CurrentStep.OutgoingTransitions
-                .FirstOrDefault(t => t.Action == action);
+            // --- AUTHORIZATION CHECK ---
+            // 1) AssignedUserId (override): if present only that user can act
+            if (currentStep.AssignedUserId.HasValue)
+            {
+                if (currentStep.AssignedUserId.Value != userId)
+                {
+                    throw new UnauthorizedAccessException(
+                        $"You are not authorized to perform action on step {currentStep.Name}. Assigned user: {currentStep.AssignedUserId}");
+                }
+            }
+            else
+            {
+                // build list of allowed role names for this step
+                var allowedRoles = new List<string>();
 
+                // a) single enum AssignedRole (if set)
+                if (currentStep.AssignedRole != default(Roles))
+                {
+                    allowedRoles.Add(currentStep.AssignedRole.ToString());
+                }
+
+                // b) many-to-many StepRole entries (assume StepRole.RoleName exists)
+                if (currentStep.Roles != null && currentStep.Roles.Any())
+                {
+                    allowedRoles.AddRange(currentStep.Roles.Select(r => r.RoleName));
+                }
+
+                // remove empties and dedupe
+                allowedRoles = allowedRoles
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .Select(r => r!.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (allowedRoles.Any())
+                {
+                    var hasRole = allowedRoles.Any(ar =>
+                        userRoles.Any(ur => string.Equals(ur, ar, StringComparison.OrdinalIgnoreCase)));
+
+                    if (!hasRole)
+                    {
+                        throw new UnauthorizedAccessException(
+                            $"You are not authorized to perform action on step {currentStep.Name}. Required role(s): {string.Join(", ", allowedRoles)}");
+                    }
+                }
+                // else: no assigned user and no assigned roles -> open to anyone (change policy if you want deny-by-default)
+            }
+
+            // find transition for the requested action
+            var transition = currentStep.OutgoingTransitions.FirstOrDefault(t => t.Action == action);
             if (transition == null)
-                throw new Exception($"No transition found for action {action}");
-            //Updated instance
+                throw new InvalidOperationException($"No transition found for action {action}");
+
+            // --- UPDATE INSTANCE ---
             instance.CurrentStepId = transition.ToStepId;
+
+            // if transition indicates completion state or ToStepId == 0 you may want to set Completed state
             instance.State = transition.ToState;
 
-            // register in history
+            // create and add instance step history (the step we moved to)
             var instanceStep = new WorkFlowInstanceStep
             {
                 InstanceId = instance.Id,
                 StepId = transition.ToStepId,
-                PerformedByUserId = userId.ToString(),
+                PerformedByUserId = userId.ToString(), // keep as string for WorkFlowInstanceStep
                 Status = transition.ToState.ToString(),
                 Comments = comments,
                 CompletedAt = DateTime.UtcNow
             };
             _context.WorkFlowInstanceSteps.Add(instanceStep);
 
-            //  register Action
+            // create action log and link the navigation so EF will set FK after SaveChanges
             var actionLog = new WorkflowInstanceAction
             {
                 WorkflowInstanceId = instance.Id,
                 WorkflowStepId = instance.CurrentStepId,
-                WorkFlowInstanceStepId = instanceStep.Id,
-                PerformedByUserId = userId,
+                WorkFlowInstanceStep = instanceStep, // navigation property linking
+                PerformedByUserId = userId, // assuming this field is Guid
                 ActionType = action,
                 Comments = comments,
                 PerformedAt = DateTime.UtcNow
@@ -136,12 +210,6 @@ namespace DynamicWorkflow.Services.Services
 
             await _context.SaveChangesAsync();
             return instance;
-
-       
         }
-
-
-
-
     }
 }

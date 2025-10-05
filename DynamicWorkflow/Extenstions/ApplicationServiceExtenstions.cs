@@ -34,6 +34,8 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddScoped<IWorkflow, WorkflowRepository>();
             services.AddScoped<IAdminUserService, AdminUserService>();
             services.AddScoped<IAdminWorkflowService, AdminWorkflowService>();
+            services.AddScoped<IworkflowInstanceService, WorkflowInstanceServices>();
+
 
             // This automatically scans for and registers all Profile classes
             // Or register specific profiles
@@ -63,6 +65,7 @@ namespace DynamicWorkflow.APIs.Extenstions
             //        .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
 
             services.AddHttpClient();
+            var tokenSection = configuration.GetSection("Token");//
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -78,15 +81,15 @@ namespace DynamicWorkflow.APIs.Extenstions
                                 ValidateLifetime = true,
                                 ValidateIssuerSigningKey = true,
                                 ValidIssuer = "https://localhost:7180",
-                                ValidAudience = configuration["Jwt:Audience"],
-                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+                    ValidAudience = tokenSection["Audience"],    // from Token section,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Token:Key"]!)),
                                 RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
                             };
             });
 
             services.AddAuthorization(options => 
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
             });
             return services;
         }

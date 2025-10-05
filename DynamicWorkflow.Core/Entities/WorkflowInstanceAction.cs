@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace DynamicWorkflow.Core.Entities
@@ -13,6 +14,7 @@ namespace DynamicWorkflow.Core.Entities
     {
 
         public int WorkflowInstanceId { get; set; }
+        [JsonIgnore]
         public WorkflowInstance WorkflowInstance { get; set; }
         public Guid PerformedByUserId { get; set; }
         public ActionType ActionType { get; set; }
