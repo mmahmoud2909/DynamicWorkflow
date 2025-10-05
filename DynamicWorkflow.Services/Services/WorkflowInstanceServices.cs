@@ -18,7 +18,6 @@ namespace DynamicWorkflow.Services.Services
             _context = context;
             _userManager = userManager;
         }
-
         public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, Guid userId)
         {
             var workflow = await _context.Workflows
@@ -48,7 +47,7 @@ namespace DynamicWorkflow.Services.Services
             {
                 InstanceId = instance.Id,
                 StepId = firstStep.Id,
-                PerformedByUserId = userId.ToString(), // keep as string (existing design)
+                PerformedByUserId = userId.ToString(),
                 Status = Status.Pending.ToString(),
             };
 
@@ -63,8 +62,9 @@ namespace DynamicWorkflow.Services.Services
             return await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
                 .Include(i => i.Workflow)
-                    .ThenInclude(w => w.Steps)
+                .ThenInclude(w => w.Steps)
                 .FirstOrDefaultAsync(i => i.Id == instanceId);
+
         }
 
         // Return instances currently assigned to the user (by assigned user or by role)
@@ -97,20 +97,15 @@ namespace DynamicWorkflow.Services.Services
 
             return instances;
         }
-<<<<<<<< HEAD:DynamicWorkflow.Services/WorkflowInstanceServices.cs
-        public async Task<WorkflowInstance> MoveToNextStepAsync(
-    int instanceId, Guid userId, ActionType action, string? comments = null)
-========
 
         //  Move to next Step 
         public async Task<WorkflowInstance> MoveToNextStepAsync(
             int instanceId, Guid userId, ActionType action, string? comments = null)
->>>>>>>> main:DynamicWorkflow.Services/Services/WorkflowInstanceServices.cs
         {
             var instance = await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
                     .ThenInclude(s => s.OutgoingTransitions)
-                .Include(i => i.Workflow)
+                    .Include(i => i.Workflow)
                     .ThenInclude(w => w.Steps)
                 .FirstOrDefaultAsync(i => i.Id == instanceId);
 
@@ -120,6 +115,7 @@ namespace DynamicWorkflow.Services.Services
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
                 throw new KeyNotFoundException("User not found");
+            //check assigned role
 
             // currentStep 
             var currentStep = instance.CurrentStep ?? instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId);
@@ -135,7 +131,7 @@ namespace DynamicWorkflow.Services.Services
             {
                 if (currentStep.AssignedUserId.Value != userId)
                 {
-                throw new UnauthorizedAccessException(
+                    throw new UnauthorizedAccessException(
                         $"You are not authorized to perform action on step {currentStep.Name}. Assigned user: {currentStep.AssignedUserId}");
                 }
             }
@@ -182,11 +178,8 @@ namespace DynamicWorkflow.Services.Services
             if (transition == null)
                 throw new InvalidOperationException($"No transition found for action {action}");
 
-            // --- UPDATE INSTANCE ---
+            //Updated instance
             instance.CurrentStepId = transition.ToStepId;
-            instance.State = transition.ToState;
-
-            // if transition indicates completion state or ToStepId == 0 you may want to set Completed state
             instance.State = transition.ToState;
 
             // create and add instance step history (the step we moved to)
@@ -194,15 +187,14 @@ namespace DynamicWorkflow.Services.Services
             {
                 InstanceId = instance.Id,
                 StepId = transition.ToStepId,
-                PerformedByUserId = userId.ToString(), // keep as string for WorkFlowInstanceStep
+                PerformedByUserId = userId.ToString(),
                 Status = transition.ToState.ToString(),
                 Comments = comments,
                 CompletedAt = DateTime.UtcNow
             };
             _context.WorkFlowInstanceSteps.Add(instanceStep);
-            await _context.SaveChangesAsync(); // 👉 لازم الأول
 
-            // create action log and link the navigation so EF will set FK after SaveChanges
+            //  register Action
             var actionLog = new WorkflowInstanceAction
             {
                 WorkflowInstanceId = instance.Id,
@@ -218,14 +210,7 @@ namespace DynamicWorkflow.Services.Services
             await _context.SaveChangesAsync();
             return instance;
 
+
         }
-<<<<<<<< HEAD:DynamicWorkflow.Services/WorkflowInstanceServices.cs
-
-
-
-
-
-========
->>>>>>>> main:DynamicWorkflow.Services/Services/WorkflowInstanceServices.cs
     }
 }

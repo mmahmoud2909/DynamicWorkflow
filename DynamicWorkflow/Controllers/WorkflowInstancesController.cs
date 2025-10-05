@@ -1,4 +1,5 @@
-﻿using DynamicWorkflow.Infrastructure.Identity;
+﻿using DynamicWorkflow.Core.Enums;
+using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
