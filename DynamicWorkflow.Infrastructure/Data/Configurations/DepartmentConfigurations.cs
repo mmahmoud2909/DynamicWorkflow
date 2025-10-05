@@ -15,8 +15,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
         {
             builder.ToTable("Departments");
             builder.Property(d=>d.Name).IsRequired().HasMaxLength(200);
-            builder.HasMany(d => d.Users).WithOne(u => u.Department).HasForeignKey(u => u.DepartmentId).OnDelete(DeleteBehavior.Restrict);
-
+            builder.HasMany(d => d.Users).WithOne(u => u.Department).HasForeignKey(u => u.DepartmentId);
 
             
         }

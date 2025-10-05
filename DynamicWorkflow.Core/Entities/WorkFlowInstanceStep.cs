@@ -23,5 +23,7 @@ namespace DynamicWorkflow.Core.Entities
         public string Status { get; set; } = "Pending"; // Pending, Completed, Rejected
         public string? Comments { get; set; }
         public DateTime? CompletedAt { get; set; }
+
+        public WorkflowInstanceAction WorkflowInstanceAction { get; set; }
     }
 }

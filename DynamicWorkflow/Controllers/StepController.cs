@@ -16,26 +16,27 @@ namespace DynamicWorkflow.APIs.Controllers
             _stepService = stepService;
         }
 
-        //[HttpGet]
-        //public object GetAllSteps()
+        //[HttpGet("GetAllStepsByWfId{id}")]
+        //public object getallsteps(int id)
         //{
-        //    var result = _stepService.GetAllSteps(Workflow );
+        //    var result = _stepService.GetAllSteps(id);
+        //    return Ok(result);
         //}
 
-        [HttpGet("{id}")]
-        public IActionResult GetWorkflowById(int id)
-        {
-            var workflow = WorkflowRepository.GetWorkflow();
-            return Ok(workflow);
-        }
+        //[HttpGet("{id}")]
+        //public IActionResult GetWorkflowById(int id)
+        //{
+        //    var workflow = WorkflowRepository.GetWorkflow();
+        //    return Ok(workflow);
+        //}
 
-        [HttpPost("{workflowId}/step/{stepId}/action")]
-        public IActionResult MakeAction(int workflowId, int stepId, [FromQuery] ActionType action)
-        {
-            var workflow = WorkflowRepository.GetWorkflow();
-            _stepService.MakeAction(workflow, stepId, action);
-            return Ok(workflow);
-        }
+        //[HttpPost("{workflowId}/step/{stepId}/action")]
+        //public IActionResult MakeAction(int workflowId, int stepId, [FromQuery] ActionType action)
+        //{
+        //    var workflow = WorkflowRepository.GetWorkflow();
+        //    _stepService.MakeAction(workflow, stepId, action);
+        //    return Ok(workflow);
+        //}
 
         [HttpGet("start/{role}")]
        

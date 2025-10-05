@@ -97,10 +97,15 @@ namespace DynamicWorkflow.Services.Services
 
             return instances;
         }
+<<<<<<<< HEAD:DynamicWorkflow.Services/WorkflowInstanceServices.cs
+        public async Task<WorkflowInstance> MoveToNextStepAsync(
+    int instanceId, Guid userId, ActionType action, string? comments = null)
+========
 
         //  Move to next Step 
         public async Task<WorkflowInstance> MoveToNextStepAsync(
             int instanceId, Guid userId, ActionType action, string? comments = null)
+>>>>>>>> main:DynamicWorkflow.Services/Services/WorkflowInstanceServices.cs
         {
             var instance = await _context.WorkflowInstances
                 .Include(i => i.CurrentStep)
@@ -130,7 +135,7 @@ namespace DynamicWorkflow.Services.Services
             {
                 if (currentStep.AssignedUserId.Value != userId)
                 {
-                    throw new UnauthorizedAccessException(
+                throw new UnauthorizedAccessException(
                         $"You are not authorized to perform action on step {currentStep.Name}. Assigned user: {currentStep.AssignedUserId}");
                 }
             }
@@ -179,6 +184,7 @@ namespace DynamicWorkflow.Services.Services
 
             // --- UPDATE INSTANCE ---
             instance.CurrentStepId = transition.ToStepId;
+            instance.State = transition.ToState;
 
             // if transition indicates completion state or ToStepId == 0 you may want to set Completed state
             instance.State = transition.ToState;
@@ -194,6 +200,7 @@ namespace DynamicWorkflow.Services.Services
                 CompletedAt = DateTime.UtcNow
             };
             _context.WorkFlowInstanceSteps.Add(instanceStep);
+            await _context.SaveChangesAsync(); // 👉 لازم الأول
 
             // create action log and link the navigation so EF will set FK after SaveChanges
             var actionLog = new WorkflowInstanceAction
@@ -210,6 +217,15 @@ namespace DynamicWorkflow.Services.Services
 
             await _context.SaveChangesAsync();
             return instance;
+
         }
+<<<<<<<< HEAD:DynamicWorkflow.Services/WorkflowInstanceServices.cs
+
+
+
+
+
+========
+>>>>>>>> main:DynamicWorkflow.Services/Services/WorkflowInstanceServices.cs
     }
 }

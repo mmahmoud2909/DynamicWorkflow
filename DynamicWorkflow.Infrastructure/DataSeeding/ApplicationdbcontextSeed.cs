@@ -1,5 +1,6 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
+using DynamicWorkflow.Core.Enums;
 using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -145,6 +146,25 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
 
         //}
 
+        //public static IApplicationBuilder SeedWorkflowData(this IApplicationBuilder app)
+        //{
+        //    using (var scope = app.ApplicationServices.CreateScope())
+        //    {
+        //        var context = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
+        //        context.Database.Migrate();
+
+        //        if (!context.Workflows.Any())
+        //        {
+        //            var workflows = WorkflowSeedData.GetWorkflows();
+
+        //            context.Workflows.AddRange(workflows);
+        //            context.SaveChanges();
+        //        }
+        //    }
+
+        //    return app;
+        //}
+
         public static IApplicationBuilder SeedWorkflowData(this IApplicationBuilder app)
         {
             using (var scope = app.ApplicationServices.CreateScope())
@@ -152,23 +172,65 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
                 context.Database.Migrate();
 
+                // Clear existing data
+                ClearExistingData(context);
+
                 if (!context.Workflows.Any())
                 {
-                    var workflows = WorkflowSeedData.GetWorkflows();
-
-                    context.Workflows.AddRange(workflows);
-                    context.SaveChanges();
+                    SeedWorkflowsWithRelationships(context);
+                    Console.WriteLine("Workflow seed data added successfully!");
                 }
             }
 
             return app;
         }
 
+        private static void ClearExistingData(ApplicationIdentityDbContext context)
+        {
+            // Clear in correct order to respect foreign key constraints
+            context.WorkflowTransitions.RemoveRange(context.WorkflowTransitions);
+            context.StepRoles.RemoveRange(context.StepRoles);
+            context.WorkflowSteps.RemoveRange(context.WorkflowSteps);
+            context.Workflows.RemoveRange(context.Workflows);
+
+            context.SaveChanges();
+        }
+
+        private static void SeedWorkflowsWithRelationships(ApplicationIdentityDbContext context)
+        {
+            var workflows = WorkflowSeedData.GetWorkflows();
+
+            // Add workflows first to get their IDs
+            context.Workflows.AddRange(workflows);
+            context.SaveChanges();
+
+            // Now create transitions after all steps have been saved and have IDs
+            foreach (var workflow in workflows)
+            {
+                CreateTransitionsForWorkflow(workflow);
+            }
+
+            context.SaveChanges();
+        }
+
+        private static void CreateTransitionsForWorkflow(Workflow workflow)
+        {
+            var steps = workflow.Steps.OrderBy(s => s.Order).ToList();
+
+            for (int i = 0; i < steps.Count - 1; i++)
+            {
+                var transition = new WorkflowTransition
+                {
+                    WorkflowId = workflow.Id,
+                    FromStepId = steps[i].Id,
+                    ToStepId = steps[i + 1].Id,
+                    Action = steps[i].stepActionTypes,
+                    FromState = Status.Pending,
+                    ToState = Status.Pending,
+                    Timestamp = DateTime.UtcNow,
+                    PerformedBy = "System"
+                };
+            }
+        }
     }
 }
-
-
-
-
-
-

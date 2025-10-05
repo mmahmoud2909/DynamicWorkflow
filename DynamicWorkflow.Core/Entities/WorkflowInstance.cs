@@ -12,6 +12,6 @@ namespace DynamicWorkflow.Core.Entities
         public WorkflowStep? CurrentStep { get; set; }
         public Status State { get; set; }
         public List<WorkflowTransition> Transitions { get; set; } = new();
-        public ICollection<WorkflowInstanceAction> WorkflowInstanceActions {  get; set; } = new List<WorkflowInstanceAction>();
+        public ICollection<WorkflowInstanceAction> WorkflowInstanceActions { get; set; } = new List<WorkflowInstanceAction>();
     }
 }

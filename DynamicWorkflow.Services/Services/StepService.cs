@@ -45,11 +45,17 @@ namespace DynamicWorkflow.Services.Services
             }
         }
 
-        public Task GetAllSteps(Workflow workflow)
+        private readonly IAdminWorkflowService _AdminWorkflowService;
+        public StepService(IAdminWorkflowService adminWorkflowService)
         {
-            var result = workflow.Steps;
-            return (Task)result;
+            _AdminWorkflowService = adminWorkflowService;
         }
+        //public Task GetAllSteps(int id)
+        //{
+        //    var wf = _AdminWorkflowService.GetWorkflowByIdAsync(id);
+        //    var result = wf..Steps;
+        //    return (Task)result;
+        //}
 
         public Task<WorkflowInstance?> GetByIdAsync(int id)
         {

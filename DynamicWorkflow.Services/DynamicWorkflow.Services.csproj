@@ -22,4 +22,8 @@
     <ProjectReference Include="..\DynamicWorkflow.Infrastructure\DynamicWorkflow.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Background Services\" />
+  </ItemGroup>
+
 </Project>

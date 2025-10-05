@@ -1,7 +1,5 @@
-﻿using DynamicWorkflow.Core.Enums;
-using DynamicWorkflow.Core.Interfaces;
-using DynamicWorkflow.Infrastructure.Identity;
-using DynamicWorkflow.Services;
+﻿using DynamicWorkflow.Infrastructure.Identity;
+using DynamicWorkflow.Services.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +10,10 @@ namespace DynamicWorkflow.APIs.Controllers
     [ApiController]
     public class WorkflowInstancesController : ControllerBase
     {
-        private readonly IworkflowInstanceService _instanceServices;
+        private readonly WorkflowInstanceServices _instanceServices;
         private readonly ApplicationIdentityDbContext _Context;
 
-        public WorkflowInstancesController(IworkflowInstanceService instanceServices,ApplicationIdentityDbContext Context)
+        public WorkflowInstancesController(WorkflowInstanceServices instanceServices, ApplicationIdentityDbContext Context)
         {
             _instanceServices = instanceServices;
             _Context = Context;
@@ -61,7 +59,7 @@ namespace DynamicWorkflow.APIs.Controllers
             var instances = await _instanceServices.GetInstancesForUserAsync(userId);
             return Ok(instances);
         }
-        // ✅ Get instance with history (steps + actions)
+
         [HttpGet("{instanceId}/history")]
         [Authorize]
         public async Task<IActionResult> GetInstanceHistory(int instanceId)

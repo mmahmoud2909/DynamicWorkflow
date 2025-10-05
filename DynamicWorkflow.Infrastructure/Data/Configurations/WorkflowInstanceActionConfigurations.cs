@@ -12,7 +12,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
 {
     public class WorkflowInstanceActionConfigurations : IEntityTypeConfiguration<WorkflowInstanceAction>
     {
-        
+
         public void Configure(EntityTypeBuilder<WorkflowInstanceAction> builder)
         {
             builder.ToTable("WorkflowInstanceActions");

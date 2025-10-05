@@ -4,6 +4,7 @@ using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DynamicWorkflow.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationIdentityDbContext))]
-    partial class ApplicationIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251001100756_LVPNeededUpdates")]
+    partial class LVPNeededUpdates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -318,51 +321,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.ToTable("WorkflowInstances", (string)null);
                 });
 
-            modelBuilder.Entity("DynamicWorkflow.Core.Entities.WorkflowInstanceAction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ActionType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Comments")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("PerformedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("PerformedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("WorkFlowInstanceStepId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WorkflowInstanceId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WorkflowStepId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WorkFlowInstanceStepId")
-                        .IsUnique();
-
-                    b.HasIndex("WorkflowInstanceId");
-
-                    b.ToTable("WorkflowInstanceActions", (string)null);
-                });
-
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.WorkflowStep", b =>
                 {
                     b.Property<int>("Id")
@@ -373,9 +331,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
 
                     b.Property<int>("AssignedRole")
                         .HasColumnType("int");
-
-                    b.Property<Guid?>("AssignedUserId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Comments")
                         .HasMaxLength(2000)
@@ -646,25 +601,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Navigation("Workflow");
                 });
 
-            modelBuilder.Entity("DynamicWorkflow.Core.Entities.WorkflowInstanceAction", b =>
-                {
-                    b.HasOne("DynamicWorkflow.Core.Entities.WorkFlowInstanceStep", "WorkFlowInstanceStep")
-                        .WithOne("WorkflowInstanceAction")
-                        .HasForeignKey("DynamicWorkflow.Core.Entities.WorkflowInstanceAction", "WorkFlowInstanceStepId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DynamicWorkflow.Core.Entities.WorkflowInstance", "WorkflowInstance")
-                        .WithMany("WorkflowInstanceActions")
-                        .HasForeignKey("WorkflowInstanceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("WorkFlowInstanceStep");
-
-                    b.Navigation("WorkflowInstance");
-                });
-
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.WorkflowStep", b =>
                 {
                     b.HasOne("DynamicWorkflow.Core.Entities.Workflow", "workflow")
@@ -763,12 +699,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("DynamicWorkflow.Core.Entities.WorkFlowInstanceStep", b =>
-                {
-                    b.Navigation("WorkflowInstanceAction")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.Workflow", b =>
                 {
                     b.Navigation("Instances");
@@ -781,8 +711,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.WorkflowInstance", b =>
                 {
                     b.Navigation("Transitions");
-
-                    b.Navigation("WorkflowInstanceActions");
                 });
 
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.WorkflowStep", b =>
