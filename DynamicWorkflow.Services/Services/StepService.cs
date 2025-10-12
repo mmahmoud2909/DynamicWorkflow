@@ -46,12 +46,6 @@ namespace DynamicWorkflow.Services.Services
                 case ActionType.Reject:
                     step.stepStatus = Status.Rejected;
                     break;
-                case ActionType.Skip:
-                    step.stepStatus = Status.Skipped;
-                    break;
-                case ActionType.Hold:
-                    step.stepStatus = Status.ONHold;
-                    break;
                 default:
                     step.stepStatus = Status.InProgress;
                     break;

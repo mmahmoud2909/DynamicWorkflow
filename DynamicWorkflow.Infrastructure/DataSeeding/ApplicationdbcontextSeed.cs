@@ -160,20 +160,21 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
             {
                 Console.WriteLine("⚠️ ServiceRepairProcurement workflows already exist — skipping seeding.");
             }
-        
-        var workflows = WorkflowSeedData.GetWorkflows();
-            // Add workflows first to get their IDs
-            context.Workflows.AddRange(workflows);
-            context.SaveChanges();
-
-            // Now create transitions after all steps have been saved and have IDs
-            foreach (var workflow in workflows)
-            {
-                CreateTransitionsForWorkflow(workflow);
-            }
-
-            context.SaveChanges();
         }
+        
+       // var workflows = WorkflowSeedData.GetWorkflows();
+            // Add workflows first to get their IDs
+        //    context.Workflows.AddRange(workflows);
+        //    context.SaveChanges();
+
+        //    // Now create transitions after all steps have been saved and have IDs
+        //    foreach (var workflow in workflows)
+        //    {
+        //        CreateTransitionsForWorkflow(workflow);
+        //    }
+
+        //    context.SaveChanges();
+        //}
 
         private static void CreateTransitionsForWorkflow(Workflow workflow)
         {

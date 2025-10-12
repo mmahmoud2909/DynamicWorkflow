@@ -134,7 +134,7 @@ namespace DynamicWorkflow.APIs
                 RequestPath = "/uploads"
             });
           
-            WorkflowSeedData.GetWorkflows();
+            //WorkflowSeedData.GetWorkflows();
             app.SeedWorkflowData();
             app.UseRouting();
             app.UseAuthentication();

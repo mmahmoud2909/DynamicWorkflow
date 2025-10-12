@@ -1,129 +1,122 @@
 ﻿using DynamicWorkflow.Core.Entities.Users;
 using DynamicWorkflow.Core.Enums;
+using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace DynamicWorkflow.APIs.Controllers
 {
     [ApiController]
     [Route("api/instance")]
-    [Authorize] // ✅ Only authenticated users
     public class WorkflowInstanceController : ControllerBase
     {
         private readonly WorkflowInstanceService _instanceService;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ApplicationIdentityDbContext _context;
 
-        public WorkflowInstanceController(WorkflowInstanceService instanceService, UserManager<ApplicationUser> userManager)
+        public WorkflowInstanceController(WorkflowInstanceService instanceService, ApplicationIdentityDbContext context)
         {
             _instanceService = instanceService;
-            _userManager = userManager;
+            _context = context;
         }
 
-        // 🟢 1️⃣ Create a new instance (like creating a new PR)
+        // 🟢 Create workflow instance (any employee can)
         [HttpPost("create/{workflowId}")]
+        [Authorize]
         public async Task<IActionResult> CreateInstance(int workflowId)
         {
-            var email = User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Name);
-            var user = await _userManager.FindByEmailAsync(email);
-
-            if (user == null)
-                return Unauthorized("User not found or not authenticated.");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            if (user == null) return Unauthorized("User not found.");
 
             var instance = await _instanceService.CreateInstanceAsync(workflowId, user);
 
-            return Ok(new
-            {
-                message = "✅ New workflow instance created successfully.",
-                instance.Id,
-                Workflow = instance.Workflow?.Name,
-                CurrentStep = instance.CurrentStep?.Name,
-                AssignedRole = instance.CurrentStep?.AssignedRole.ToString(),
-                State = instance.State.ToString()
-            });
-        }
-
-        // 🟡 2️⃣ Perform an action on the current step (e.g., Accept, Hold, Reject)
-        [HttpPost("{instanceId}/action")]
-        public async Task<IActionResult> MakeAction(int instanceId, [FromQuery] ActionType action)
-        {
-            var email = User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Name);
-            var user = await _userManager.FindByEmailAsync(email);
-
-            if (user == null)
-                return Unauthorized("User not found or not authenticated.");
-
-            try
-            {
-                await _instanceService.MakeActionAsync(instanceId, action, user);
-                var updated = await _instanceService.GetByIdAsync(instanceId);
-
-                return Ok(new
-                {
-                    message = $"✅ Action '{action}' performed successfully.",
-                    CurrentStep = updated?.CurrentStep?.Name,
-                    CurrentRole = updated?.CurrentStep?.AssignedRole.ToString(),
-                    State = updated?.State.ToString()
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-        // 🟣 3️⃣ Get single instance details
-        [HttpGet("{instanceId}")]
-        public async Task<IActionResult> GetInstance(int instanceId)
-        {
-            var instance = await _instanceService.GetByIdAsync(instanceId);
-            if (instance == null)
-                return NotFound($"Instance with ID {instanceId} not found.");
+            var nextStep = instance.Workflow.Steps
+                .OrderBy(s => s.Order)
+                .SkipWhile(s => s.Id != instance.CurrentStepId)
+                .Skip(1)
+                .FirstOrDefault();
 
             return Ok(new
             {
-                instance.Id,
-                Workflow = instance.Workflow?.Name,
-                CurrentStep = instance.CurrentStep?.Name,
-                CurrentRole = instance.CurrentStep?.AssignedRole.ToString(),
-                State = instance.State.ToString(),
-                Transitions = instance.Transitions.Select(t => new
+                message = "✅ Workflow instance created successfully.",
+                instanceId = instance.Id,
+                workflow = instance.Workflow.Name,
+                currentStepId = instance.CurrentStepId,
+                currentStep = instance.CurrentStep?.Name,
+                nextStep = nextStep?.Name,
+                assignedRole = instance.CurrentStep?.AssignedRole.ToString(),
+                state = instance.State.ToString(),
+                steps = instance.Workflow.Steps.Select(s => new
                 {
-                    t.Id,
-                    t.Action,
-                    t.FromStepId,
-                    t.ToStepId,
-                    t.FromState,
-                    t.ToState,
-                    t.Timestamp,
-                    t.PerformedBy
+                    s.Id,
+                    s.Name,
+                    Status = s.stepStatus.ToString(),
+                    s.AssignedRole
                 })
             });
         }
 
-        // 🟤 4️⃣ Get all instances (Admin/Manager use)
-        [HttpGet("all")]
-        [Authorize(Roles = "Admin,Manager")]
-        public async Task<IActionResult> GetAllInstances()
+        // 🟡 Perform Accept / Reject
+        [HttpPost("{instanceId}/action")]
+        [Authorize]
+        public async Task<IActionResult> MakeAction(int instanceId, [FromQuery] ActionType action)
         {
-            var instances = await _instanceService.GetAllAsync();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            if (user == null) return Unauthorized("User not found.");
 
-            var result = instances.Select(i => new
+            var updatedInstance = await _instanceService.MakeActionAsync(instanceId, action, user);
+
+            var nextStep = updatedInstance.Workflow.Steps
+                .OrderBy(s => s.Order)
+                .SkipWhile(s => s.Id != updatedInstance.CurrentStepId)
+                .Skip(1)
+                .FirstOrDefault();
+
+            return Ok(new
             {
-                i.Id,
-                Workflow = i.Workflow?.Name,
-                CurrentStep = i.CurrentStep?.Name,
-                AssignedRole = i.CurrentStep?.AssignedRole.ToString(),
-                State = i.State.ToString()
+                message = $"✅ Action '{action}' applied successfully.",
+                instanceId = updatedInstance.Id,
+                currentStepId = updatedInstance.CurrentStepId,
+                currentStep = updatedInstance.CurrentStep?.Name,
+                nextStep = nextStep?.Name,
+                assignedRole = updatedInstance.CurrentStep?.AssignedRole.ToString(),
+                state = updatedInstance.State.ToString(),
+                steps = updatedInstance.Workflow.Steps.Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    Status = s.stepStatus.ToString(),
+                    s.AssignedRole
+                })
             });
+        }
 
-            return Ok(result);
+        // 🟣 Get instance details
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetInstance(int id)
+        {
+            var instance = await _instanceService.GetByIdAsync(id);
+            if (instance == null) return NotFound("Instance not found.");
+
+            return Ok(new
+            {
+                instance.Id,
+                instance.Workflow.Name,
+                instance.State,
+                currentStep = instance.CurrentStep?.Name,
+                steps = instance.Workflow.Steps.Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    Status = s.stepStatus.ToString(),
+                    s.AssignedRole
+                })
+            });
         }
     }
 }

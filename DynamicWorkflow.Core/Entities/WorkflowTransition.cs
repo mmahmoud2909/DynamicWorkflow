@@ -5,7 +5,7 @@ namespace DynamicWorkflow.Core.Entities
     public class WorkflowTransition:BaseEntity
     {
         public int FromStepId { get; set; }
-        public int ToStepId { get; set; }
+        public int ?ToStepId { get; set; }
         public Workflow workflow { get; set; }
         public int WorkflowId { get; set; }
         public WorkflowStep? FromStep { get; set; }
