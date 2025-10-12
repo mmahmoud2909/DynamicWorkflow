@@ -14,7 +14,7 @@ namespace DynamicWorkflow.APIs
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddAuthServices(builder.Configuration);
-            builder.Services.AddScoped<WorkflowInstanceServices>();
+            builder.Services.AddScoped<WorkflowInstanceService>();
             builder.Services.AddApplicationsService(builder.Configuration);
             builder.Services.AddControllers()
     .      AddJsonOptions(options =>

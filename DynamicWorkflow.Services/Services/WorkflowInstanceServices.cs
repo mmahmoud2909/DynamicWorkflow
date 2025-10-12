@@ -1,116 +1,133 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
 using DynamicWorkflow.Core.Enums;
-using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DynamicWorkflow.Services.Services
 {
-    public class WorkflowInstanceServices : IworkflowInstanceService
+    public class WorkflowInstanceService
     {
         private readonly ApplicationIdentityDbContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
 
-        public WorkflowInstanceServices(ApplicationIdentityDbContext context, UserManager<ApplicationUser> userManager)
+        public WorkflowInstanceService(ApplicationIdentityDbContext context)
         {
             _context = context;
-            _userManager = userManager;
         }
 
-        public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, Guid userId)
+        // 🟢 Create a new instance (e.g. new PR)
+        public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, ApplicationUser createdBy)
         {
             var workflow = await _context.Workflows
                 .Include(w => w.Steps)
-                .FirstOrDefaultAsync(wf => wf.Id == workflowId);
+                .FirstOrDefaultAsync(w => w.Id == workflowId);
 
             if (workflow == null)
-                throw new Exception("Workflow not found");
+                throw new Exception($"Workflow with ID {workflowId} not found.");
 
-            var firstStep = workflow.Steps.OrderBy(stp => stp.Id).FirstOrDefault();
+            var firstStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault();
             if (firstStep == null)
-                throw new Exception("Workflow has no steps");
+                throw new Exception("Workflow has no defined steps.");
 
             var instance = new WorkflowInstance
             {
-                WorkflowId = workflowId,
+                WorkflowId = workflow.Id,
+                Workflow = workflow,
                 CurrentStepId = firstStep.Id,
-                State = Status.Pending,
+                CurrentStep = firstStep,
+                State = Status.InProgress
             };
 
             _context.WorkflowInstances.Add(instance);
             await _context.SaveChangesAsync();
 
-            var instanceStep = new WorkFlowInstanceStep
-            {
-                InstanceId = instance.Id,
-                StepId = firstStep.Id,
-                PerformedByUserId = userId.ToString(),
-                Status = Status.Pending.ToString(),
-            };
-
-            _context.WorkFlowInstanceSteps.Add(instanceStep);
-            await _context.SaveChangesAsync();
             return instance;
         }
 
-        public async Task<WorkflowInstance?> GetInstanceByIdAsync(int instanceId)
-        {
-            return await _context.WorkflowInstances
-                .Include(i => i.CurrentStep)
-                .FirstOrDefaultAsync(i => i.Id == instanceId);
-        }
-
-        public async Task<IList<WorkflowInstance>> GetInstancesForUserAsync(Guid userId)
-        {
-            return await _context.WorkflowInstances
-                .Include(i => i.CurrentStep)
-                .Where(i => i.Transitions.Any(t => t.PerformedBy == userId.ToString()))
-                .ToListAsync();
-        }
-
-        public async Task<WorkflowInstance> MoveToNextStepAsync(int instanceId, Guid userId, ActionType action, string? comments = null)
+        // 🟡 Perform an action on current step
+        public async Task MakeActionAsync(int instanceId, ActionType action, ApplicationUser currentUser)
         {
             var instance = await _context.WorkflowInstances
+                .Include(i => i.Workflow)
+                    .ThenInclude(w => w.Steps)
                 .Include(i => i.CurrentStep)
-                    .ThenInclude(s => s.OutgoingTransitions)
+                .Include(i => i.Transitions)
                 .FirstOrDefaultAsync(i => i.Id == instanceId);
 
             if (instance == null)
-                throw new Exception("Instance not found");
+                throw new Exception($"Instance with ID {instanceId} not found.");
 
-            var transition = instance.CurrentStep.OutgoingTransitions
-                .FirstOrDefault(t => t.Action == action);
+            var currentStep = instance.CurrentStep ??
+                instance.Workflow?.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId);
 
-            if (transition == null)
-                throw new Exception($"No transition found for action {action}");
+            if (currentStep == null)
+                throw new Exception("Current step not found in workflow instance.");
 
-            // Update workflow instance
-            instance.CurrentStepId = transition.ToStepId;
-            instance.State = transition.ToState;
+            // 🔒 Role validation
+            var userRoles = await (from ur in _context.UserRoles
+                                   join r in _context.Roles on ur.RoleId equals r.Id
+                                   where ur.UserId == currentUser.Id
+                                   select r.Name).ToListAsync();
 
-            // Save new step in instance history
-            var instanceStep = new WorkFlowInstanceStep
+            var requiredRole = currentStep.AssignedRole.ToString();
+            if (!userRoles.Contains(requiredRole) && !userRoles.Contains("Admin"))
+                throw new UnauthorizedAccessException($"Only role '{requiredRole}' can perform this step.");
+
+            // 📝 Create a transition
+            var transition = new WorkflowTransition
             {
-                InstanceId = instance.Id,
-                StepId = transition.ToStepId,
-                PerformedByUserId = userId.ToString(),
-                Status = transition.ToState.ToString(),
-                Comments = comments,
-                CompletedAt = DateTime.UtcNow
+                WorkflowId = instance.WorkflowId,
+                FromStepId = currentStep.Id,
+                Action = action,
+                FromState = currentStep.stepStatus,
+                Timestamp = DateTime.UtcNow,
+                PerformedBy = $"{currentUser.DisplayName} ({string.Join(',', userRoles)})"
             };
 
-            _context.WorkFlowInstanceSteps.Add(instanceStep);
+            // 🧭 Determine next step
+            var nextStep = instance.Workflow.Steps
+                .OrderBy(s => s.Order)
+                .FirstOrDefault(s => s.Order > currentStep.Order);
 
-            // Save performed transition
-            transition.PerformedBy = userId.ToString();
-            transition.Timestamp = DateTime.UtcNow;
+            if (nextStep != null)
+            {
+                transition.ToStepId = nextStep.Id;
+                transition.ToState = Status.Pending;
+                instance.CurrentStepId = nextStep.Id;
+                instance.CurrentStep = nextStep;
+                instance.State = Status.InProgress;
+            }
+            else
+            {
+                // ✅ Workflow finished
+                transition.ToStepId = currentStep.Id;
+                transition.ToState = Status.Completed;
+                instance.State = Status.Completed;
+            }
 
+            instance.Transitions.Add(transition);
+            _context.WorkflowTransitions.Add(transition);
             await _context.SaveChangesAsync();
-            return instance;
         }
 
-     
+        // 🟣 Get instance details
+        public async Task<WorkflowInstance?> GetByIdAsync(int id)
+        {
+            return await _context.WorkflowInstances
+                .Include(i => i.Workflow)
+                    .ThenInclude(w => w.Steps)
+                .Include(i => i.CurrentStep)
+                .Include(i => i.Transitions)
+                .FirstOrDefaultAsync(i => i.Id == id);
+        }
+
+        // 🟤 Get all instances (for admin or reporting)
+        public async Task<List<WorkflowInstance>> GetAllAsync()
+        {
+            return await _context.WorkflowInstances
+                .Include(i => i.Workflow)
+                .Include(i => i.CurrentStep)
+                .ToListAsync();
+        }
     }
 }
