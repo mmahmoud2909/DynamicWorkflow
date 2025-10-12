@@ -13,12 +13,13 @@ namespace DynamicWorkflow.Core.Entities
 		public Roles AssignedRole { get; set; }
 		public Workflow workflow { get; set; }
 		public int WorkflowId {  get; set; }
+        public Guid? AssignedUserId { get; set; }//TO Assign User to determined Step 
 
         public ICollection<StepRole> Roles { get; set; } = new List<StepRole>();
         public ICollection<WorkflowTransition> IncomingTransitions { get; set; }=new List<WorkflowTransition>();
 		public ICollection<WorkflowTransition> OutgoingTransitions { get; set; } = new List<WorkflowTransition>();
 		public ICollection<WorkFlowInstanceStep> InstanceSteps { get; set; } = new List<WorkFlowInstanceStep>();
-
+        public string? Condition { get; set; }
         public WorkflowStep() { }
 		public WorkflowStep(string stepName, string comments, Status stepStatus, ActionType stepActionTypes)
 		{

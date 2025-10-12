@@ -14,13 +14,14 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
         public static async Task SeedDataAsync(IServiceProvider services)
         {
 
-            using var scope = services.CreateScope();
+            using var scope = services.CreateScope();//defines the services i want to get and already registed in my program
             var context = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
             var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<ApplicationRole>>();
 
             await context.Database.MigrateAsync();//ensure database exist and last version  
 
+            
             // 1. Roles
             string[] RoleNames = { "Admin", "Manager", "Employee", "HR" };
             foreach (var roleName in RoleNames)
@@ -121,7 +122,7 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
                 context.Database.Migrate();
 
                 // Clear existing data
-                ClearExistingData(context);
+               // ClearExistingData(context);
 
                 if (!context.Workflows.Any())
                 {
@@ -146,7 +147,21 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
 
         private static void SeedWorkflowsWithRelationships(ApplicationIdentityDbContext context)
         {
-            var workflows = WorkflowSeedData.GetWorkflows();
+            // ✅ Add only ServiceRepairProcurement workflows if not already added
+            if (!context.Workflows.Any(w => w.Name == "ServiceRepairProcurement"))
+            {
+                var serviceWorkflows = ServiceRepairWorkflowSeedData.GetWorkflows();
+                context.Workflows.AddRange(serviceWorkflows);
+                context.SaveChanges();
+
+                Console.WriteLine("✅ ServiceRepairProcurement workflows added successfully!");
+            }
+            else
+            {
+                Console.WriteLine("⚠️ ServiceRepairProcurement workflows already exist — skipping seeding.");
+            }
+        
+        var workflows = WorkflowSeedData.GetWorkflows();
             // Add workflows first to get their IDs
             context.Workflows.AddRange(workflows);
             context.SaveChanges();
