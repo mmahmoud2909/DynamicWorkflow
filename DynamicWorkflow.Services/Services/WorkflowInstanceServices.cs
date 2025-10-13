@@ -1,4 +1,4 @@
-﻿using DynamicWorkflow.Core.Entities;
+using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
 using DynamicWorkflow.Core.Enums;
 using DynamicWorkflow.Infrastructure.Identity;
@@ -14,6 +14,8 @@ namespace DynamicWorkflow.Services.Services
         {
             _context = context;
         }
+
+        // 🟢 Create new workflow instance
         public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, ApplicationUser createdBy)
         {
             var workflow = await _context.Workflows
@@ -23,9 +25,8 @@ namespace DynamicWorkflow.Services.Services
             if (workflow == null)
                 throw new Exception($"Workflow with ID {workflowId} not found.");
 
-            var firstStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault();
-            if (firstStep == null)
-                throw new Exception("Workflow has no defined steps.");
+            var firstStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault()
+                ?? throw new Exception("Workflow has no defined steps.");
 
             firstStep.stepStatus = Status.InProgress;
 
@@ -44,7 +45,9 @@ namespace DynamicWorkflow.Services.Services
             return instance;
         }
 
-        public async Task<WorkflowInstance> MakeActionAsync(int instanceId, ActionType action, ApplicationUser currentUser)
+        // 🟡 Perform action (Accept / Reject)
+        public async Task<(WorkflowInstance currentInstance, WorkflowInstance? nextWorkflowInstance)> MakeActionAsync(
+            int instanceId, ActionType action, ApplicationUser currentUser)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -59,9 +62,8 @@ namespace DynamicWorkflow.Services.Services
                 if (instance == null)
                     throw new Exception($"Instance {instanceId} not found.");
 
-                var currentStep = instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId);
-                if (currentStep == null)
-                    throw new Exception("Current step not found.");
+                var currentStep = instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId)
+                    ?? throw new Exception("Current step not found.");
 
                 // 🔐 Role check
                 var userRoles = await (from ur in _context.UserRoles
@@ -143,10 +145,27 @@ namespace DynamicWorkflow.Services.Services
                 instance.Transitions.Add(transition);
                 _context.WorkflowTransitions.Add(transition);
                 await _context.SaveChangesAsync();
+
+                // 🧩 If workflow finished, start next workflow
+                WorkflowInstance? nextWorkflowInstance = null;
+                if (instance.State == Status.Completed)
+                {
+                    var parentId = instance.Workflow.ParentWorkflowId;
+                    var nextWorkflow = await _context.Workflows
+                        .Where(w => w.ParentWorkflowId == parentId && w.Order > instance.Workflow.Order)
+                        .OrderBy(w => w.Order)
+                        .Include(w => w.Steps)
+                        .FirstOrDefaultAsync();
+
+                    if (nextWorkflow != null)
+                    {
+                        nextWorkflowInstance = await CreateInstanceAsync(nextWorkflow.Id, currentUser);
+                    }
+                }
+
                 await transaction.CommitAsync();
 
-                instance.Workflow.Description = direction;
-                return instance;
+                return (instance, nextWorkflowInstance);
             }
             catch
             {
@@ -155,6 +174,7 @@ namespace DynamicWorkflow.Services.Services
             }
         }
 
+        // 🟣 Get instance by ID
         public async Task<WorkflowInstance?> GetByIdAsync(int id)
         {
             return await _context.WorkflowInstances
