@@ -76,9 +76,14 @@ namespace DynamicWorkflow.Services.Services
             {
                 workflow.Status = Status.Completed;
             }
-
             await _context.SaveChangesAsync();
         }
+        //public Task GetAllSteps(int id)
+        //{
+        //    var wf = _AdminWorkflowService.GetWorkflowByIdAsync(id);
+        //    var result = wf..Steps;
+        //    return (Task)result;
+        //}
 
         /// <summary>
         /// Returns all steps of a workflow.

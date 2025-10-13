@@ -118,5 +118,26 @@ namespace DynamicWorkflow.APIs.Controllers
                 })
             });
         }
+
+        [HttpGet("{instanceId}/history")]
+        [Authorize]
+        public async Task<IActionResult> GetInstanceHistory(int instanceId)
+        {
+            var instance = await _instanceServices.GetInstanceByIdAsync(instanceId);
+
+            if (instance == null)
+                return NotFound();
+
+            var history = await _Context.WorkFlowInstanceSteps
+                .Where(s => s.InstanceId == instanceId)
+                .Include(s => s.Step)
+                .ToListAsync();
+
+            var actions = await _Context.WorkflowInstancesAction
+                .Where(a => a.WorkflowInstanceId == instanceId)
+                .ToListAsync();
+
+            return Ok(new { instance, history, actions });
+        }
     }
 }

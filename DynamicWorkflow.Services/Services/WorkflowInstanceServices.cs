@@ -14,8 +14,6 @@ namespace DynamicWorkflow.Services.Services
         {
             _context = context;
         }
-
-        // 🟢 Create new workflow instance
         public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, ApplicationUser createdBy)
         {
             var workflow = await _context.Workflows
@@ -46,7 +44,6 @@ namespace DynamicWorkflow.Services.Services
             return instance;
         }
 
-        // 🟡 Perform action (Accept / Reject)
         public async Task<WorkflowInstance> MakeActionAsync(int instanceId, ActionType action, ApplicationUser currentUser)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -158,7 +155,6 @@ namespace DynamicWorkflow.Services.Services
             }
         }
 
-        // 🟣 Get instance by ID
         public async Task<WorkflowInstance?> GetByIdAsync(int id)
         {
             return await _context.WorkflowInstances
