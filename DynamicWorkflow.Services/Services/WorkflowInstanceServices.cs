@@ -1,216 +1,167 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
 using DynamicWorkflow.Core.Enums;
-using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DynamicWorkflow.Services.Services
 {
-    public class WorkflowInstanceServices : IworkflowInstanceService
+    public class WorkflowInstanceService
     {
         private readonly ApplicationIdentityDbContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
 
-        public WorkflowInstanceServices(ApplicationIdentityDbContext context, UserManager<ApplicationUser> userManager)
+        public WorkflowInstanceService(ApplicationIdentityDbContext context)
         {
             _context = context;
-            _userManager = userManager;
         }
-        public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, Guid userId)
+        public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, ApplicationUser createdBy)
         {
             var workflow = await _context.Workflows
                 .Include(w => w.Steps)
-                .FirstOrDefaultAsync(wf => wf.Id == workflowId);
+                .FirstOrDefaultAsync(w => w.Id == workflowId);
 
             if (workflow == null)
-                throw new Exception("Workflow not found");
+                throw new Exception($"Workflow with ID {workflowId} not found.");
 
-            // use Step.Order (logical order) instead of Id
-            var firstStep = workflow.Steps.OrderBy(stp => stp.Order).FirstOrDefault();
+            var firstStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault();
             if (firstStep == null)
-                throw new Exception("Workflow has no steps");
+                throw new Exception("Workflow has no defined steps.");
+
+            firstStep.stepStatus = Status.InProgress;
 
             var instance = new WorkflowInstance
             {
-                WorkflowId = workflowId,
+                WorkflowId = workflow.Id,
+                Workflow = workflow,
                 CurrentStepId = firstStep.Id,
-                State = Status.Pending,
-                CreatedAt = DateTime.UtcNow,
+                CurrentStep = firstStep,
+                State = Status.InProgress
             };
 
             _context.WorkflowInstances.Add(instance);
             await _context.SaveChangesAsync();
 
-            var instanceStep = new WorkFlowInstanceStep
-            {
-                InstanceId = instance.Id,
-                StepId = firstStep.Id,
-                PerformedByUserId = userId.ToString(),
-                Status = Status.Pending.ToString(),
-            };
-
-            _context.WorkFlowInstanceSteps.Add(instanceStep);
-            await _context.SaveChangesAsync();
             return instance;
         }
 
-        // Get Instance By Id
-        public async Task<WorkflowInstance?> GetInstanceByIdAsync(int instanceId)
+        public async Task<WorkflowInstance> MakeActionAsync(int instanceId, ActionType action, ApplicationUser currentUser)
         {
-            return await _context.WorkflowInstances
-                .Include(i => i.CurrentStep)
-                .Include(i => i.Workflow)
-                .ThenInclude(w => w.Steps)
-                .FirstOrDefaultAsync(i => i.Id == instanceId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-        }
-
-        // Return instances currently assigned to the user (by assigned user or by role)
-        public async Task<IList<WorkflowInstance>> GetInstancesForUserAsync(Guid userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null) return new List<WorkflowInstance>();
-
-            var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
-
-            // include current step and its roles
-            var instances = await _context.WorkflowInstances
-                .Include(i => i.CurrentStep)
-                    .ThenInclude(s => s.Roles)
-                .Include(i => i.Workflow)
-                .Where(i =>
-                    // assigned specifically to this user (if AssignedUserId is Guid? on WorkflowStep)
-                    (i.CurrentStep != null && i.CurrentStep.AssignedUserId.HasValue && i.CurrentStep.AssignedUserId.Value == userId)
-                    ||
-                    // or step's enum AssignedRole matches any of user's roles (by name)
-                    (i.CurrentStep != null && i.CurrentStep.AssignedRole != default(Roles) &&
-                        userRoles.Any(ur => string.Equals(ur, i.CurrentStep.AssignedRole.ToString(), StringComparison.OrdinalIgnoreCase)))
-                    ||
-                    // or the step has StepRole entries whose RoleName matches any of user's roles
-                    (i.CurrentStep != null && i.CurrentStep.Roles.Any() &&
-                        i.CurrentStep.Roles.Select(r => r.RoleName).Any(roleName =>
-                            userRoles.Any(ur => string.Equals(ur, roleName, StringComparison.OrdinalIgnoreCase))))
-                )
-                .ToListAsync();
-
-            return instances;
-        }
-
-        //  Move to next Step 
-        public async Task<WorkflowInstance> MoveToNextStepAsync(
-            int instanceId, Guid userId, ActionType action, string? comments = null)
-        {
-            var instance = await _context.WorkflowInstances
-                .Include(i => i.CurrentStep)
-                    .ThenInclude(s => s.OutgoingTransitions)
-                    .Include(i => i.Workflow)
-                    .ThenInclude(w => w.Steps)
-                .FirstOrDefaultAsync(i => i.Id == instanceId);
-
-            if (instance == null)
-                throw new KeyNotFoundException("Instance not found");
-
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-                throw new KeyNotFoundException("User not found");
-            //check assigned role
-
-            // currentStep 
-            var currentStep = instance.CurrentStep ?? instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId);
-            if (currentStep == null)
-                throw new InvalidOperationException("Current step not found");
-
-            // get user roles
-            var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
-
-            // --- AUTHORIZATION CHECK ---
-            // 1) AssignedUserId (override): if present only that user can act
-            if (currentStep.AssignedUserId.HasValue)
+            try
             {
-                if (currentStep.AssignedUserId.Value != userId)
+                var instance = await _context.WorkflowInstances
+                    .Include(i => i.Workflow).ThenInclude(w => w.Steps)
+                    .Include(i => i.CurrentStep)
+                    .Include(i => i.Transitions)
+                    .FirstOrDefaultAsync(i => i.Id == instanceId);
+
+                if (instance == null)
+                    throw new Exception($"Instance {instanceId} not found.");
+
+                var currentStep = instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId);
+                if (currentStep == null)
+                    throw new Exception("Current step not found.");
+
+                // 🔐 Role check
+                var userRoles = await (from ur in _context.UserRoles
+                                       join r in _context.Roles on ur.RoleId equals r.Id
+                                       where ur.UserId == currentUser.Id
+                                       select r.Name).ToListAsync();
+
+                var requiredRole = currentStep.AssignedRole.ToString();
+                if (!userRoles.Contains(requiredRole) && !userRoles.Contains("Admin"))
+                    throw new UnauthorizedAccessException($"Only role '{requiredRole}' can perform this step.");
+
+                var orderedSteps = instance.Workflow.Steps.OrderBy(s => s.Order).ToList();
+                var currentIndex = orderedSteps.IndexOf(currentStep);
+                var nextStep = currentIndex < orderedSteps.Count - 1 ? orderedSteps[currentIndex + 1] : null;
+                var previousStep = currentIndex > 0 ? orderedSteps[currentIndex - 1] : null;
+
+                // Transition record
+                var transition = new WorkflowTransition
                 {
-                    throw new UnauthorizedAccessException(
-                        $"You are not authorized to perform action on step {currentStep.Name}. Assigned user: {currentStep.AssignedUserId}");
-                }
-            }
-            else
-            {
-                // build list of allowed role names for this step
-                var allowedRoles = new List<string>();
+                    WorkflowId = instance.WorkflowId,
+                    FromStepId = currentStep.Id,
+                    Action = action,
+                    FromState = currentStep.stepStatus,
+                    Timestamp = DateTime.UtcNow,
+                    PerformedBy = $"{currentUser.DisplayName} ({string.Join(',', userRoles)})"
+                };
 
-                // a) single enum AssignedRole (if set)
-                if (currentStep.AssignedRole != default(Roles))
+                string direction;
+
+                if (action == ActionType.Accept)
                 {
-                    allowedRoles.Add(currentStep.AssignedRole.ToString());
-                }
+                    currentStep.stepStatus = Status.Accepted;
 
-                // b) many-to-many StepRole entries (assume StepRole.RoleName exists)
-                if (currentStep.Roles != null && currentStep.Roles.Any())
-                {
-                    allowedRoles.AddRange(currentStep.Roles.Select(r => r.RoleName));
-                }
-
-                // remove empties and dedupe
-                allowedRoles = allowedRoles
-                    .Where(r => !string.IsNullOrWhiteSpace(r))
-                    .Select(r => r!.Trim())
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                if (allowedRoles.Any())
-                {
-                    var hasRole = allowedRoles.Any(ar =>
-                        userRoles.Any(ur => string.Equals(ur, ar, StringComparison.OrdinalIgnoreCase)));
-
-                    if (!hasRole)
+                    if (nextStep != null)
                     {
-                        throw new UnauthorizedAccessException(
-                            $"You are not authorized to perform action on step {currentStep.Name}. Required role(s): {string.Join(", ", allowedRoles)}");
+                        nextStep.stepStatus = Status.InProgress;
+                        instance.CurrentStepId = nextStep.Id;
+                        instance.CurrentStep = nextStep;
+                        transition.ToStepId = nextStep.Id;
+                        transition.ToState = Status.InProgress;
+                        direction = "Forward";
+                    }
+                    else
+                    {
+                        instance.State = Status.Completed;
+                        transition.ToState = Status.Completed;
+                        direction = "Completed";
                     }
                 }
-                // else: no assigned user and no assigned roles -> open to anyone (change policy if you want deny-by-default)
+                else // Reject
+                {
+                    currentStep.stepStatus = Status.Rejected;
+
+                    if (previousStep != null)
+                    {
+                        previousStep.stepStatus = Status.InProgress;
+                        instance.CurrentStepId = previousStep.Id;
+                        instance.CurrentStep = previousStep;
+                        transition.ToStepId = previousStep.Id;
+                        transition.ToState = Status.InProgress;
+                        direction = "Rollback";
+                    }
+                    else
+                    {
+                        instance.State = Status.Rejected;
+                        transition.ToState = Status.Rejected;
+                        direction = "StartRollback";
+                    }
+                }
+
+                // Update instance global state
+                if (instance.Workflow.Steps.All(s => s.stepStatus == Status.Accepted))
+                    instance.State = Status.Completed;
+                else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.Rejected))
+                    instance.State = Status.Rejected;
+                else
+                    instance.State = Status.InProgress;
+
+                instance.Transitions.Add(transition);
+                _context.WorkflowTransitions.Add(transition);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                instance.Workflow.Description = direction;
+                return instance;
             }
-
-            // find transition for the requested action
-            var transition = currentStep.OutgoingTransitions.FirstOrDefault(t => t.Action == action);
-            if (transition == null)
-                throw new InvalidOperationException($"No transition found for action {action}");
-
-            //Updated instance
-            instance.CurrentStepId = transition.ToStepId;
-            instance.State = transition.ToState;
-
-            // create and add instance step history (the step we moved to)
-            var instanceStep = new WorkFlowInstanceStep
+            catch
             {
-                InstanceId = instance.Id,
-                StepId = transition.ToStepId,
-                PerformedByUserId = userId.ToString(),
-                Status = transition.ToState.ToString(),
-                Comments = comments,
-                CompletedAt = DateTime.UtcNow
-            };
-            _context.WorkFlowInstanceSteps.Add(instanceStep);
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
 
-            //  register Action
-            var actionLog = new WorkflowInstanceAction
-            {
-                WorkflowInstanceId = instance.Id,
-                WorkflowStepId = instance.CurrentStepId,
-                WorkFlowInstanceStep = instanceStep, // navigation property linking
-                PerformedByUserId = userId, // assuming this field is Guid
-                ActionType = action,
-                Comments = comments,
-                PerformedAt = DateTime.UtcNow
-            };
-            _context.WorkflowInstancesAction.Add(actionLog);
-
-            await _context.SaveChangesAsync();
-            return instance;
-
-
+        public async Task<WorkflowInstance?> GetByIdAsync(int id)
+        {
+            return await _context.WorkflowInstances
+                .Include(i => i.Workflow).ThenInclude(w => w.Steps)
+                .Include(i => i.CurrentStep)
+                .Include(i => i.Transitions)
+                .FirstOrDefaultAsync(i => i.Id == id);
         }
     }
 }

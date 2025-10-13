@@ -1,33 +1,96 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DynamicWorkflow.Core.Enums
+﻿namespace DynamicWorkflow.Core.Enums
 {
     public enum ActionType
     {
-        Create,
+        // ===== General / Core Actions =====
+        //Create,
+        //StartProcess,
+        //CompleteProcess,
         Accept,
-        Reject, 
-        Hold,
-        Notify,
-        Skip,
+        Reject,
+        //Hold,
+        //Notify,
+        //Skip,
         RequestChanges,
-        SystemApproval,
-        UserApproval,
-        ManagerApproval,
-        DirectorApproval,
-        CLevelApproval,
-        TechnicalApproval,
-        PlanningApproval,
-        TreasuryApproval,
-        ProcurementApproval,
-        WarehouseApproval,
-        QcApproval,
-        GrnGeneration,
-        InvoiceProcessing,
-        FinalApproval
+        //AddInfoAttachments,
+        //SystemApproval,
+
+        // ===== Purchase Request (PR) =====
+        //CreateRequest,
+        //ReviewRequest,
+        //AssignToMRO,
+        //ReviewServiceDesc,
+        //ValidatePRData,
+        //ReturnPR,
+        //ResubmitPR,
+
+        // ===== Service Provider Selection =====
+        //StartSelection,
+        //CheckExternalType,
+        //CheckLocalService,
+        //CheckNewProvider,
+        //CreateRFQ,
+        //SendRFQ,
+        //ReceiveQuotations,
+        //VerifyMinProposals,
+        //ReviewOffersTech,
+        //MarkRejectedQuotations,
+        //CreateComparisonSheet,
+        //AssessFinancially,
+        //SendForManagerApproval,
+        //ProcessManagerApproval,
+        //SendNotesToProvider,
+        //DiscardAndFeedback,
+        //SeekSCDirectorApproval,
+        //ShareNomination,
+        //RunNegotiation,
+        //SendForFinalTechApproval,
+        //ObtainManagerApproval,
+        //SendForFinancialApproval,
+
+        //// ===== Purchase Order (PO) =====
+        //CreatePO,
+        //SubmitPOApproval,
+        //ConfirmPOApproval,
+        //SendPO,
+        //AttachPODocs,
+        //ReviewDocuments,
+        //SignDocuments,
+        //ObtainDirectorSignature,
+        //ForwardToLogistics,
+
+        //// ===== Inbound Logistics =====
+        //StartInboundLogistics,
+        //CompleteOutbound,
+        //CheckItemReadiness,
+        //ReceiveItem,
+        //SignVoucher,
+        //CreateInvoiceForm,
+
+        //// ===== Payment Settlement =====
+        //StartPaymentProcess,
+        //ReviewPaymentDocs,
+        //SendToFinance,
+        //ConfirmPayment,
+
+        //// ===== Vendor Registration =====
+        //StartVendorRegistration,
+        //AddVendorToSystem,
+        //SetActiveStatus,
+
+        //// ===== Approvals (Generic) =====
+        //UserApproval,
+        //ManagerApproval,
+        //DirectorApproval,
+        //CLevelApproval,
+        //TechnicalApproval,
+        //PlanningApproval,
+        //TreasuryApproval,
+        //ProcurementApproval,
+        //WarehouseApproval,
+        //QcApproval,
+        //FinalApproval,
+        //GrnGeneration,
+        //InvoiceProcessing
     }
 }

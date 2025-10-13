@@ -37,25 +37,25 @@ namespace DynamicWorkflow.Infrastructure.Data
             await _db.SaveChangesAsync();
         }
 
-        public static Workflow GetWorkflow()
-        {
-            if (_workflow != null) return _workflow;
+        //public static Workflow GetWorkflow()
+        //{
+        //    if (_workflow != null) return _workflow;
 
-            _workflow = new Workflow
-            {
-                Id = 1,
-                Name = "Vacation Request Workflow",
-                Description = "Vacation requested due to Gradution Party for class 2025",
-                Steps = new List<WorkflowStep>
-                {
-                new WorkflowStep { Id = 1, Name = "Vacation Request", stepActionTypes = ActionType.Create, stepStatus = Status.InProgress },
-                new WorkflowStep { Id = 2, Name = "N+1 Approval", stepActionTypes = ActionType.Hold, stepStatus = Status.ONHold  },
-                new WorkflowStep { Id = 3, Name = "Manager Approval", stepActionTypes = ActionType.Skip, stepStatus = Status.Skipped  },
-                new WorkflowStep { Id = 4, Name = "HR Validation", stepActionTypes = ActionType.Reject, stepStatus = Status.Rejected}
-                }
-            };
+        //    _workflow = new Workflow
+        //    {
+        //        Id = 1,
+        //        Name = "Vacation Request Workflow",
+        //        Description = "Vacation requested due to Gradution Party for class 2025",
+        //        Steps = new List<WorkflowStep>
+        //        {
+        //        new WorkflowStep { Id = 1, Name = "Vacation Request", stepActionTypes = ActionType.Create, stepStatus = Status.InProgress },
+        //        new WorkflowStep { Id = 2, Name = "N+1 Approval", stepActionTypes = ActionType.Hold, stepStatus = Status.ONHold  },
+        //        new WorkflowStep { Id = 3, Name = "Manager Approval", stepActionTypes = ActionType.Skip, stepStatus = Status.Skipped  },
+        //        new WorkflowStep { Id = 4, Name = "HR Validation", stepActionTypes = ActionType.Reject, stepStatus = Status.Rejected}
+        //        }
+        //    };
 
-            return _workflow;
-        }
+        //    return _workflow;
+        //}
     }
 }

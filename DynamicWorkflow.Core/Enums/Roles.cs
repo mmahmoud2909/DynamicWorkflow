@@ -8,6 +8,8 @@ namespace DynamicWorkflow.Core.Enums
 {
     public enum Roles
     {
+        Logistics,//0
+        Finance,//1
         Employee,
         Manager,
         HR,
@@ -17,7 +19,7 @@ namespace DynamicWorkflow.Core.Enums
         Technical,
         Planning,
         Treasury,
-        Procurement,
+        Procurement,//11
         Warehouse,
         QC,
         Supervisor,

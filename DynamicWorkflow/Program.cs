@@ -1,7 +1,8 @@
 using DynamicWorkflow.APIs.Extenstions;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.DataSeeding;
-using DynamicWorkflow.Services;
+using DynamicWorkflow.Infrastructure.Identity;
+using DynamicWorkflow.Services.Services;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
@@ -14,7 +15,15 @@ namespace DynamicWorkflow.APIs
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddAuthServices(builder.Configuration);
+            builder.Services.AddScoped<WorkflowInstanceService>();
             builder.Services.AddApplicationsService(builder.Configuration);
+            builder.Services.AddControllers()
+    .      AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
             builder.Services.AddEndpointsApiExplorer();
 
             //// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -49,12 +58,25 @@ namespace DynamicWorkflow.APIs
                 });
             });
 
+
             var app = builder.Build();
+
+            //Data Seeding Scope
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+
+                // ?? 1?? Seed users and roles
+                await UsersAndRolesSeedData.SeedAsync(services);
+
+                // ?? 2?? Seed base workflows (LV Plant etc.)
                 await ApplicationdbcontextSeed.SeedDataAsync(services);
-                WorkflowSeedData.GetWorkflows();
+
+                // ?? 3?? Optional: seed ServiceRepairProcurement workflows
+                var context = services.GetRequiredService<ApplicationIdentityDbContext>();
+                var serviceRepairWorkflows = ServiceRepairWorkflowSeedData.GetWorkflows();
+                context.Workflows.AddRange(serviceRepairWorkflows);
+                await context.SaveChangesAsync();
             }
 
             // Configure the HTTP request pipeline.
@@ -112,6 +134,8 @@ namespace DynamicWorkflow.APIs
                     Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads")),
                 RequestPath = "/uploads"
             });
+          
+            //WorkflowSeedData.GetWorkflows();
             app.SeedWorkflowData();
             app.UseRouting();
             app.UseAuthentication();
