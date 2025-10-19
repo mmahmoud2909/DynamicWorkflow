@@ -80,7 +80,7 @@ namespace DynamicWorkflow.Services.Services
                 var nextStep = currentIndex < orderedSteps.Count - 1 ? orderedSteps[currentIndex + 1] : null;
                 var previousStep = currentIndex > 0 ? orderedSteps[currentIndex - 1] : null;
 
-                // Transition record
+                // Create transition record
                 var transition = new WorkflowTransition
                 {
                     WorkflowId = instance.WorkflowId,
@@ -93,6 +93,7 @@ namespace DynamicWorkflow.Services.Services
 
                 string direction;
 
+                // 🟢 ACCEPT action
                 if (action == ActionType.Accept)
                 {
                     currentStep.stepStatus = Status.Accepted;
@@ -113,7 +114,8 @@ namespace DynamicWorkflow.Services.Services
                         direction = "Completed";
                     }
                 }
-                else // Reject
+                // 🔴 REJECT action
+                else
                 {
                     currentStep.stepStatus = Status.Rejected;
 
@@ -134,20 +136,23 @@ namespace DynamicWorkflow.Services.Services
                     }
                 }
 
-                // Update instance global state
+                // 🔄 Sync instance state with the current step
+                instance.State = instance.CurrentStep.stepStatus;
+
+                // 🔁 Evaluate full workflow state
                 if (instance.Workflow.Steps.All(s => s.stepStatus == Status.Accepted))
                     instance.State = Status.Completed;
                 else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.Rejected))
                     instance.State = Status.Rejected;
-                else
+                else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.InProgress))
                     instance.State = Status.InProgress;
 
+                // Save transition
                 instance.Transitions.Add(transition);
                 _context.WorkflowTransitions.Add(transition);
                 await _context.SaveChangesAsync();
 
-                // 🧩 If workflow finished, start next workflow
-                WorkflowInstance? nextWorkflowInstance = null;
+                // ✅ If completed, move to next workflow
                 if (instance.State == Status.Completed)
                 {
                     var parentId = instance.Workflow.ParentWorkflowId;
@@ -164,6 +169,8 @@ namespace DynamicWorkflow.Services.Services
                 }
 
                 await transaction.CommitAsync();
+
+                instance.Workflow.Description = direction;
 
                 return (instance, nextWorkflowInstance);
             }

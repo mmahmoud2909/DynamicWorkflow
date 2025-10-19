@@ -14,60 +14,130 @@ namespace DynamicWorkflow.APIs.Controllers
         private readonly IAdminUserService _svc;
         public AdminUsersController(IAdminUserService svc) => _svc = svc;
 
+        // ✅ Get all users (with department + role info)
         [HttpGet("GetAllUsers")]
-        public async Task<IActionResult> GetAll() => Ok(await _svc.GetAllUsersAsync());
+        public async Task<IActionResult> GetAll()
+        {
+            var users = await _svc.GetAllUsersAsync();
 
+            if (users == null || !users.Any())
+                return Ok(new { message = "No users found." });
+
+            return Ok(new
+            {
+                message = "✅ All registered users retrieved successfully.",
+                totalCount = users.Count,
+                users
+            });
+        }
+
+        // ✅ Get user by ID (detailed)
         [HttpGet("GetUserbyId/{id:guid}")]
         public async Task<IActionResult> Get(Guid id)
         {
             var user = await _svc.GetUserByIdAsync(id);
-            return user == null ? NotFound() : Ok(user);
+            if (user == null)
+                return NotFound(new { message = "❌ User not found." });
+
+            return Ok(new
+            {
+                message = "✅ User retrieved successfully.",
+                user
+            });
         }
 
+        // ✅ Create user and return full info
         [HttpPost("CreateUser")]
         public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(new { message = "Invalid data provided.", errors = ModelState });
+
             var created = await _svc.CreateUserAsync(dto);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, new
+            {
+                message = "✅ User created successfully.",
+                user = new
+                {
+                    created.Id,
+                    created.DisplayName,
+                    created.Email,
+                    created.DepartmentId,
+                    created.ManagerId,
+                    created.RegisteredAt,
+                    created.IsPendingDeletion,
+                    created.ProfilePicUrl,
+                    Role = dto.Role.ToString()
+                }
+            });
         }
 
+        // ✅ Update user with response info
         [HttpPut("UpdateUser/{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserDto dto)
         {
             await _svc.UpdateUserAsync(id, dto);
-            return NoContent();
+
+            return Ok(new
+            {
+                message = "✅ User updated successfully.",
+                updatedUserId = id
+            });
         }
 
+        // ✅ Delete user
         [HttpDelete("DeleteUser/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
             await _svc.DeleteUserAsync(id);
-            return NoContent();
+            return Ok(new { message = $"🗑️ User with ID {id} deleted successfully." });
         }
 
-        // Departments CRUD
+        // ✅ Departments CRUD endpoints with nice Swagger responses
         [HttpGet("GetAllDepartments")]
-        public async Task<IActionResult> GetDepartments() => Ok(await _svc.GetDepartmentsAsync());
+        public async Task<IActionResult> GetDepartments()
+        {
+            var departments = await _svc.GetDepartmentsAsync();
+
+            if (!departments.Any())
+                return Ok(new { message = "No departments found." });
+
+            return Ok(new
+            {
+                message = "✅ Departments retrieved successfully.",
+                totalCount = departments.Count,
+                departments
+            });
+        }
 
         [HttpPost("CreateDepartment")]
         public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentDto dto)
         {
             var d = await _svc.CreateDepartmentAsync(dto);
-            return CreatedAtAction(nameof(GetDepartments), new { id = d.Id }, d);
+            return CreatedAtAction(nameof(GetDepartments), new
+            {
+                message = "✅ Department created successfully.",
+                department = new { d.Id, d.Name }
+            });
         }
 
         [HttpPut("UpdateDepartment/{id:guid}")]
         public async Task<IActionResult> UpdateDepartment(Guid id, [FromBody] UpdateDepartmentDto dto)
         {
             await _svc.UpdateDepartmentAsync(id, dto);
-            return NoContent();
+            return Ok(new
+            {
+                message = "✅ Department updated successfully.",
+                updatedDepartmentId = id
+            });
         }
 
         [HttpDelete("DeleteDepartment/{id:guid}")]
         public async Task<IActionResult> DeleteDepartment(Guid id)
         {
             await _svc.DeleteDepartmentAsync(id);
-            return NoContent();
+            return Ok(new { message = $"🗑️ Department with ID {id} deleted successfully." });
         }
     }
 }
