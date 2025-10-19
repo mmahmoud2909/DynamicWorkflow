@@ -25,9 +25,8 @@ namespace DynamicWorkflow.Services.Services
             if (workflow == null)
                 throw new Exception($"Workflow with ID {workflowId} not found.");
 
-            var firstStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault();
-            if (firstStep == null)
-                throw new Exception("Workflow has no defined steps.");
+            var firstStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault()
+                ?? throw new Exception("Workflow has no defined steps.");
 
             firstStep.stepStatus = Status.InProgress;
 
@@ -47,7 +46,8 @@ namespace DynamicWorkflow.Services.Services
         }
 
         // 🟡 Perform action (Accept / Reject)
-        public async Task<WorkflowInstance> MakeActionAsync(int instanceId, ActionType action, ApplicationUser currentUser)
+        public async Task<(WorkflowInstance currentInstance, WorkflowInstance? nextWorkflowInstance)> MakeActionAsync(
+            int instanceId, ActionType action, ApplicationUser currentUser)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -62,9 +62,8 @@ namespace DynamicWorkflow.Services.Services
                 if (instance == null)
                     throw new Exception($"Instance {instanceId} not found.");
 
-                var currentStep = instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId);
-                if (currentStep == null)
-                    throw new Exception("Current step not found.");
+                var currentStep = instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId)
+                    ?? throw new Exception("Current step not found.");
 
                 // 🔐 Role check
                 var userRoles = await (from ur in _context.UserRoles
@@ -81,7 +80,7 @@ namespace DynamicWorkflow.Services.Services
                 var nextStep = currentIndex < orderedSteps.Count - 1 ? orderedSteps[currentIndex + 1] : null;
                 var previousStep = currentIndex > 0 ? orderedSteps[currentIndex - 1] : null;
 
-                // Transition record
+                // Create transition record
                 var transition = new WorkflowTransition
                 {
                     WorkflowId = instance.WorkflowId,
@@ -94,6 +93,7 @@ namespace DynamicWorkflow.Services.Services
 
                 string direction;
 
+                // 🟢 ACCEPT action
                 if (action == ActionType.Accept)
                 {
                     currentStep.stepStatus = Status.Accepted;
@@ -114,7 +114,8 @@ namespace DynamicWorkflow.Services.Services
                         direction = "Completed";
                     }
                 }
-                else // Reject
+                // 🔴 REJECT action
+                else
                 {
                     currentStep.stepStatus = Status.Rejected;
 
@@ -135,21 +136,44 @@ namespace DynamicWorkflow.Services.Services
                     }
                 }
 
-                // Update instance global state
+                // 🔄 Sync instance state with the current step
+                instance.State = instance.CurrentStep.stepStatus;
+
+                // 🔁 Evaluate full workflow state
                 if (instance.Workflow.Steps.All(s => s.stepStatus == Status.Accepted))
                     instance.State = Status.Completed;
                 else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.Rejected))
                     instance.State = Status.Rejected;
-                else
+                else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.InProgress))
                     instance.State = Status.InProgress;
 
+                // Save transition
                 instance.Transitions.Add(transition);
                 _context.WorkflowTransitions.Add(transition);
                 await _context.SaveChangesAsync();
+
+                WorkflowInstance? nextWorkflowInstance = null;
+
+                // ✅ If completed, move to next workflow
+                if (instance.State == Status.Completed)
+                {
+                    var parentId = instance.Workflow.ParentWorkflowId;
+                    var nextWorkflow = await _context.Workflows
+                        .Where(w => w.ParentWorkflowId == parentId && w.Order > instance.Workflow.Order)
+                        .OrderBy(w => w.Order)
+                        .Include(w => w.Steps)
+                        .FirstOrDefaultAsync();
+
+                    if (nextWorkflow != null)
+                    {
+                        nextWorkflowInstance = await CreateInstanceAsync(nextWorkflow.Id, currentUser);
+                    }
+                }
+
                 await transaction.CommitAsync();
 
                 instance.Workflow.Description = direction;
-                return instance;
+                return (instance, nextWorkflowInstance);
             }
             catch
             {
