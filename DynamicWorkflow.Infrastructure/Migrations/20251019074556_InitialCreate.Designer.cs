@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DynamicWorkflow.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationIdentityDbContext))]
-    [Migration("20251002122100_AddAssignedUserIdToWorkflowStep")]
-    partial class AddAssignedUserIdToWorkflowStep
+    [Migration("20251019074556_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -82,7 +82,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
 
                     b.HasIndex("StepId");
 
-                    b.ToTable("StepRole");
+                    b.ToTable("StepRoles");
                 });
 
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.Users.ApplicationRole", b =>
@@ -279,6 +279,9 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Property<int?>("ParentWorkflowId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -384,6 +387,9 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<string>("Condition")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -446,7 +452,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Property<int>("ToState")
                         .HasColumnType("int");
 
-                    b.Property<int>("ToStepId")
+                    b.Property<int?>("ToStepId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -690,8 +696,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.HasOne("DynamicWorkflow.Core.Entities.WorkflowStep", "ToStep")
                         .WithMany("IncomingTransitions")
                         .HasForeignKey("ToStepId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DynamicWorkflow.Core.Entities.Workflow", "workflow")
                         .WithMany("Transitions")

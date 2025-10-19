@@ -162,17 +162,18 @@ namespace DynamicWorkflow.Services.Services
                         .Include(w => w.Steps)
                         .FirstOrDefaultAsync();
 
-                    if (nextWorkflow != null)
-                    {
-                        nextWorkflowInstance = await CreateInstanceAsync(nextWorkflow.Id, currentUser);
-                    }
+                    //if (nextWorkflow != null)
+                    //{
+                    //    nextWorkflowInstance = await CreateInstanceAsync(nextWorkflow.Id, currentUser);
+                    //}
                 }
 
                 await transaction.CommitAsync();
 
                 instance.Workflow.Description = direction;
 
-                return (instance, nextWorkflowInstance);
+                //return (instance, nextWorkflowInstance);
+                return (instance, instance);
             }
             catch
             {

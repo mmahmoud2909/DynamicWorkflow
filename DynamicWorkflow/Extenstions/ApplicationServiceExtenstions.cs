@@ -22,7 +22,7 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddControllers().AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-            }); 
+            });
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped(typeof(IUnitOfWork), typeof(UnitOfWork));
             services.AddScoped(typeof(ILoggingService<>), typeof(LoggingService<>));
@@ -34,7 +34,7 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddScoped<IWorkflow, WorkflowRepository>();
             services.AddScoped<IAdminUserService, AdminUserService>();
             services.AddScoped<IAdminWorkflowService, AdminWorkflowService>();
-            services.AddScoped<IworkflowInstanceService, WorkflowInstanceServices>();
+            //services.AddScoped<IworkflowInstanceService, WorkflowInstanceServices>();
 
 
             // This automatically scans for and registers all Profile classes
@@ -75,21 +75,21 @@ namespace DynamicWorkflow.APIs.Extenstions
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
-                            {
-                                ValidateIssuer = true,
-                                ValidateAudience = true,
-                                ValidateLifetime = true,
-                                ValidateIssuerSigningKey = true,
-                                ValidIssuer = "https://localhost:7180",
-                                ValidAudience = configuration["Jwt:Audience"],
-                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
-                                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-                            };
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = "https://localhost:7180",
+                    ValidAudience = configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+                    RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+                };
             });
 
-            services.AddAuthorization(options => 
+            services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN","Admin"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN", "Admin"));
             });
             return services;
         }

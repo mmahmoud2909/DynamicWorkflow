@@ -21,7 +21,7 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
                 var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
                 var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
 
-                await context.Database.MigrateAsync();
+               // await context.Database.MigrateAsync();
 
                 // 1️⃣ Roles
                 string[] roleNames = { "Admin", "Manager", "Employee", "Procurement", "Finance", "Technical", "Warehouse", "Logistics", "HR", "Planning" };

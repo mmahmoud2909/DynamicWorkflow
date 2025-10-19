@@ -66,13 +66,10 @@ namespace DynamicWorkflow.APIs
             {
                 var services = scope.ServiceProvider;
 
-                // ?? 1?? Seed users and roles
                 await UsersAndRolesSeedData.SeedAsync(services);
 
-                // ?? 2?? Seed base workflows (LV Plant etc.)
                 await ApplicationdbcontextSeed.SeedDataAsync(services);
 
-                // ?? 3?? Optional: seed ServiceRepairProcurement workflows
                 var context = services.GetRequiredService<ApplicationIdentityDbContext>();
                 var serviceRepairWorkflows = ServiceRepairWorkflowSeedData.GetWorkflows();
                 context.Workflows.AddRange(serviceRepairWorkflows);

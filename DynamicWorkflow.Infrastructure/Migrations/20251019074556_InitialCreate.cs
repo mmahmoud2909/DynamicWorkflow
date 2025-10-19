@@ -47,6 +47,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     ParentWorkflowId = table.Column<int>(type: "int", nullable: true),
                     Order = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -128,6 +129,8 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     isEndStep = table.Column<bool>(type: "bit", nullable: false),
                     AssignedRole = table.Column<int>(type: "int", nullable: false),
                     WorkflowId = table.Column<int>(type: "int", nullable: false),
+                    AssignedUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Condition = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -341,7 +344,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FromStepId = table.Column<int>(type: "int", nullable: false),
-                    ToStepId = table.Column<int>(type: "int", nullable: false),
+                    ToStepId = table.Column<int>(type: "int", nullable: true),
                     WorkflowId = table.Column<int>(type: "int", nullable: false),
                     Action = table.Column<int>(type: "int", nullable: false),
                     FromState = table.Column<int>(type: "int", nullable: false),
@@ -376,6 +379,39 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                         name: "FK_WorkflowTransitions_Workflows_WorkflowId",
                         column: x => x.WorkflowId,
                         principalTable: "Workflows",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WorkflowInstanceActions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    WorkflowInstanceId = table.Column<int>(type: "int", nullable: false),
+                    PerformedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ActionType = table.Column<int>(type: "int", nullable: false),
+                    Comments = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PerformedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    WorkFlowInstanceStepId = table.Column<int>(type: "int", nullable: false),
+                    WorkflowStepId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowInstanceActions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WorkflowInstanceActions_WorkFlowInstanceSteps_WorkFlowInstanceStepId",
+                        column: x => x.WorkFlowInstanceStepId,
+                        principalTable: "WorkFlowInstanceSteps",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_WorkflowInstanceActions_WorkflowInstances_WorkflowInstanceId",
+                        column: x => x.WorkflowInstanceId,
+                        principalTable: "WorkflowInstances",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -433,6 +469,17 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 name: "IX_StepRoles_StepId",
                 table: "StepRoles",
                 column: "StepId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInstanceActions_WorkflowInstanceId",
+                table: "WorkflowInstanceActions",
+                column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInstanceActions_WorkFlowInstanceStepId",
+                table: "WorkflowInstanceActions",
+                column: "WorkFlowInstanceStepId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstances_CurrentStepId",
@@ -505,7 +552,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 name: "StepRoles");
 
             migrationBuilder.DropTable(
-                name: "WorkFlowInstanceSteps");
+                name: "WorkflowInstanceActions");
 
             migrationBuilder.DropTable(
                 name: "WorkflowTransitions");
@@ -517,10 +564,13 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "WorkflowInstances");
+                name: "WorkFlowInstanceSteps");
 
             migrationBuilder.DropTable(
                 name: "Departments");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowInstances");
 
             migrationBuilder.DropTable(
                 name: "WorkflowSteps");
