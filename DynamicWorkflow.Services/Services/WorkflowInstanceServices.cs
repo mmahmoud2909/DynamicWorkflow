@@ -15,7 +15,6 @@ namespace DynamicWorkflow.Services.Services
             _context = context;
         }
 
-        // 🟢 Create new workflow instance
         public async Task<WorkflowInstance> CreateInstanceAsync(int workflowId, ApplicationUser createdBy)
         {
             var workflow = await _context.Workflows
@@ -28,8 +27,7 @@ namespace DynamicWorkflow.Services.Services
             var firstStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault()
                 ?? throw new Exception("Workflow has no defined steps.");
 
-            firstStep.stepStatus = Status.InProgress;
-
+            // Clone the step to avoid modifying shared entity
             var instance = new WorkflowInstance
             {
                 WorkflowId = workflow.Id,
@@ -45,7 +43,6 @@ namespace DynamicWorkflow.Services.Services
             return instance;
         }
 
-        // 🟡 Perform action (Accept / Reject)
         public async Task<(WorkflowInstance currentInstance, WorkflowInstance? nextWorkflowInstance)> MakeActionAsync(
             int instanceId, ActionType action, ApplicationUser currentUser)
         {
@@ -65,7 +62,6 @@ namespace DynamicWorkflow.Services.Services
                 var currentStep = instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId)
                     ?? throw new Exception("Current step not found.");
 
-                // 🔐 Role check
                 var userRoles = await (from ur in _context.UserRoles
                                        join r in _context.Roles on ur.RoleId equals r.Id
                                        where ur.UserId == currentUser.Id
@@ -80,7 +76,6 @@ namespace DynamicWorkflow.Services.Services
                 var nextStep = currentIndex < orderedSteps.Count - 1 ? orderedSteps[currentIndex + 1] : null;
                 var previousStep = currentIndex > 0 ? orderedSteps[currentIndex - 1] : null;
 
-                // Create transition record
                 var transition = new WorkflowTransition
                 {
                     WorkflowId = instance.WorkflowId,
@@ -92,8 +87,8 @@ namespace DynamicWorkflow.Services.Services
                 };
 
                 string direction;
+                WorkflowInstance? nextWorkflowInstance = null;
 
-                // 🟢 ACCEPT action
                 if (action == ActionType.Accept)
                 {
                     currentStep.stepStatus = Status.Accepted;
@@ -114,7 +109,6 @@ namespace DynamicWorkflow.Services.Services
                         direction = "Completed";
                     }
                 }
-                // 🔴 REJECT action
                 else
                 {
                     currentStep.stepStatus = Status.Rejected;
@@ -136,10 +130,8 @@ namespace DynamicWorkflow.Services.Services
                     }
                 }
 
-                // 🔄 Sync instance state with the current step
                 instance.State = instance.CurrentStep.stepStatus;
 
-                // 🔁 Evaluate full workflow state
                 if (instance.Workflow.Steps.All(s => s.stepStatus == Status.Accepted))
                     instance.State = Status.Completed;
                 else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.Rejected))
@@ -147,12 +139,13 @@ namespace DynamicWorkflow.Services.Services
                 else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.InProgress))
                     instance.State = Status.InProgress;
 
-                // Save transition
                 instance.Transitions.Add(transition);
                 _context.WorkflowTransitions.Add(transition);
+
+                // Save the current workflow changes first
                 await _context.SaveChangesAsync();
 
-                // ✅ If completed, move to next workflow
+                // Check for next workflow AFTER current workflow is completed
                 if (instance.State == Status.Completed)
                 {
                     var parentId = instance.Workflow.ParentWorkflowId;
@@ -162,18 +155,37 @@ namespace DynamicWorkflow.Services.Services
                         .Include(w => w.Steps)
                         .FirstOrDefaultAsync();
 
-                    //if (nextWorkflow != null)
-                    //{
-                    //    nextWorkflowInstance = await CreateInstanceAsync(nextWorkflow.Id, currentUser);
-                    //}
+                    if (nextWorkflow != null)
+                    {
+                        // Always create new instance for next workflow
+                        var firstStepOfNext = nextWorkflow.Steps.OrderBy(s => s.Order).FirstOrDefault();
+                        if (firstStepOfNext != null)
+                        {
+                            nextWorkflowInstance = new WorkflowInstance
+                            {
+                                WorkflowId = nextWorkflow.Id,
+                                Workflow = nextWorkflow,
+                                CurrentStepId = firstStepOfNext.Id,
+                                CurrentStep = firstStepOfNext,
+                                State = Status.InProgress
+                            };
+
+                            _context.WorkflowInstances.Add(nextWorkflowInstance);
+                            await _context.SaveChangesAsync();
+                            direction = "CompletedAndChained";
+                        }
+                    }
+                    else
+                    {
+                        direction = "AllWorkflowsCompleted";
+                    }
                 }
 
                 await transaction.CommitAsync();
 
                 instance.Workflow.Description = direction;
 
-                //return (instance, nextWorkflowInstance);
-                return (instance, instance);
+                return (instance, nextWorkflowInstance);
             }
             catch
             {
@@ -182,7 +194,6 @@ namespace DynamicWorkflow.Services.Services
             }
         }
 
-        // 🟣 Get instance by ID
         public async Task<WorkflowInstance?> GetByIdAsync(int id)
         {
             return await _context.WorkflowInstances
@@ -190,6 +201,57 @@ namespace DynamicWorkflow.Services.Services
                 .Include(i => i.CurrentStep)
                 .Include(i => i.Transitions)
                 .FirstOrDefaultAsync(i => i.Id == id);
+        }
+
+        public async Task<List<WorkflowInstance>> GetWorkflowChainInstancesAsync(int? parentWorkflowId)
+        {
+            return await _context.WorkflowInstances
+                .Include(i => i.Workflow).ThenInclude(w => w.Steps)
+                .Include(i => i.CurrentStep)
+                .Include(i => i.Transitions)
+                .Where(i => i.Workflow.ParentWorkflowId == parentWorkflowId)
+                .OrderBy(i => i.Workflow.Order)
+                .ToListAsync();
+        }
+
+        public async Task<bool> IsWorkflowChainCompletedAsync(int? parentWorkflowId)
+        {
+            var allWorkflows = await _context.Workflows
+                .Where(w => w.ParentWorkflowId == parentWorkflowId)
+                .OrderBy(w => w.Order)
+                .ToListAsync();
+
+            if (!allWorkflows.Any())
+                return false;
+
+            foreach (var workflow in allWorkflows)
+            {
+                var hasCompletedInstance = await _context.WorkflowInstances
+                    .AnyAsync(i => i.WorkflowId == workflow.Id && i.State == Status.Completed);
+
+                if (!hasCompletedInstance)
+                    return false;
+            }
+
+            return true;
+        }
+
+        // Get the current active instance for a workflow chain
+        public async Task<WorkflowInstance?> GetActiveInstanceInChainAsync(int? parentWorkflowId)
+        {
+            var allWorkflows = await _context.Workflows
+                .Where(w => w.ParentWorkflowId == parentWorkflowId)
+                .OrderBy(w => w.Order)
+                .Select(w => w.Id)
+                .ToListAsync();
+
+            return await _context.WorkflowInstances
+                .Include(i => i.Workflow).ThenInclude(w => w.Steps)
+                .Include(i => i.CurrentStep)
+                .Include(i => i.Transitions)
+                .Where(i => allWorkflows.Contains(i.WorkflowId) && i.State == Status.InProgress)
+                .OrderBy(i => i.Workflow.Order)
+                .FirstOrDefaultAsync();
         }
     }
 }
