@@ -157,6 +157,13 @@ namespace DynamicWorkflow.APIs.Controllers
                 ? orderedSteps[currentIndex + 1]
                 : null;
 
+            var orderedSteps = instance.Workflow.Steps.OrderBy(s => s.Order).ToList();
+            var currentStep = instance.CurrentStep;
+            var currentIndex = orderedSteps.FindIndex(s => s.Id == instance.CurrentStepId);
+            var nextStep = currentIndex >= 0 && currentIndex < orderedSteps.Count - 1
+                ? orderedSteps[currentIndex + 1]
+                : null;
+
             return Ok(new
             {
                 instanceId = instance.Id,

@@ -4,6 +4,7 @@ using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DynamicWorkflow.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationIdentityDbContext))]
-    partial class ApplicationIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251001112011_AddInstanceActionandconfiguration")]
+    partial class AddInstanceActionandconfiguration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -79,7 +82,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
 
                     b.HasIndex("StepId");
 
-                    b.ToTable("StepRoles");
+                    b.ToTable("StepRole");
                 });
 
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.Users.ApplicationRole", b =>
@@ -276,9 +279,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Property<int?>("ParentWorkflowId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -377,15 +377,9 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Property<int>("AssignedRole")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("AssignedUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Comments")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("Condition")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -449,7 +443,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Property<int>("ToState")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ToStepId")
+                    b.Property<int>("ToStepId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -693,7 +687,8 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.HasOne("DynamicWorkflow.Core.Entities.WorkflowStep", "ToStep")
                         .WithMany("IncomingTransitions")
                         .HasForeignKey("ToStepId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("DynamicWorkflow.Core.Entities.Workflow", "workflow")
                         .WithMany("Transitions")

@@ -1,4 +1,5 @@
 ﻿using DynamicWorkflow.Core.Enums;
+using System.Text.Json.Serialization;
 
 namespace DynamicWorkflow.Core.Entities
 {
@@ -11,6 +12,7 @@ namespace DynamicWorkflow.Core.Entities
 		public ActionType stepActionTypes { get; set; }
 		public bool isEndStep {  get; set; }
 		public Roles AssignedRole { get; set; }
+		[JsonIgnore]
 		public Workflow workflow { get; set; }
 		public int WorkflowId {  get; set; }
         public Guid? AssignedUserId { get; set; }//TO Assign User to determined Step 

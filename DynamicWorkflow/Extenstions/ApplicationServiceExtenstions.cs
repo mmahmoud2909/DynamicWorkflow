@@ -34,6 +34,8 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddScoped<IWorkflow, WorkflowRepository>();
             services.AddScoped<IAdminUserService, AdminUserService>();
             services.AddScoped<IAdminWorkflowService, AdminWorkflowService>();
+            services.AddScoped<IworkflowInstanceService, WorkflowInstanceServices>();
+
 
             // This automatically scans for and registers all Profile classes
             // Or register specific profiles
@@ -63,6 +65,7 @@ namespace DynamicWorkflow.APIs.Extenstions
             //        .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
 
             services.AddHttpClient();
+            var tokenSection = configuration.GetSection("Token");//
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

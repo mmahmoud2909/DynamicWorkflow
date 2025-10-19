@@ -1,4 +1,4 @@
-﻿using DynamicWorkflow.Core.Entities;
+using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
 using DynamicWorkflow.Core.Enums;
 using DynamicWorkflow.Infrastructure.Identity;
@@ -152,8 +152,6 @@ namespace DynamicWorkflow.Services.Services
                 _context.WorkflowTransitions.Add(transition);
                 await _context.SaveChangesAsync();
 
-                WorkflowInstance? nextWorkflowInstance = null;
-
                 // ✅ If completed, move to next workflow
                 if (instance.State == Status.Completed)
                 {
@@ -173,6 +171,7 @@ namespace DynamicWorkflow.Services.Services
                 await transaction.CommitAsync();
 
                 instance.Workflow.Description = direction;
+
                 return (instance, nextWorkflowInstance);
             }
             catch

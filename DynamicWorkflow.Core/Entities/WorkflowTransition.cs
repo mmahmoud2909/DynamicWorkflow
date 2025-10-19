@@ -1,4 +1,5 @@
 ﻿using DynamicWorkflow.Core.Enums;
+using System.Text.Json.Serialization;
 
 namespace DynamicWorkflow.Core.Entities
 {
@@ -8,7 +9,10 @@ namespace DynamicWorkflow.Core.Entities
         public int ?ToStepId { get; set; }
         public Workflow workflow { get; set; }
         public int WorkflowId { get; set; }
+        [JsonIgnore]
+
         public WorkflowStep? FromStep { get; set; }
+        [JsonIgnore]
         public WorkflowStep? ToStep { get; set; }
         public ActionType Action {  get; set; }
         public Status FromState { get; set; }
