@@ -20,7 +20,11 @@ namespace DynamicWorkflow.Core.Entities
 
 
         public string? PerformedByUserId { get; set; }  
-        public string Status { get; set; } = "Pending"; // Pending, Completed, Rejected
+
+        public string Status { get; set; } = "Pending"; // Pending, Completed, Rejected => will convert to enums 
+        public int WorkflowStatusId {  get; set; }
+        public WorkflowStatus WorkflowStatus { get; set; }
+
         public string? Comments { get; set; }
         public DateTime? CompletedAt { get; set; }
     }

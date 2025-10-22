@@ -1,11 +1,6 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DynamicWorkflow.Infrastructure.Data.Configurations
 {
@@ -30,7 +25,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.HasOne(s => s.workflow)
                 .WithMany(w => w.Steps)
                 .HasForeignKey(s => s.WorkflowId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
             //each step may have many transitions fromstep
             builder.HasMany(st=>st.OutgoingTransitions)
                 .WithOne(tr=>tr.FromStep)

@@ -1,11 +1,6 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DynamicWorkflow.Infrastructure.Data.Configurations
 {
@@ -16,25 +11,41 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.ToTable("WorkflowTransitions");
             builder.HasKey(t => t.Id);
 
-            // Relationships
-            // One Workflow=> Many Transitions
-            builder.HasOne(t => t.workflow)
+            // 🔹 One Workflow => Many Transitions
+            builder.HasOne(t => t.Workflow)
                 .WithMany(w => w.Transitions)
                 .HasForeignKey(t => t.WorkflowId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict); 
 
-            // FromStep => OutgoingTransitions
+            // 🔹 FromStep => OutgoingTransitions
             builder.HasOne(t => t.FromStep)
                 .WithMany(s => s.OutgoingTransitions)
                 .HasForeignKey(t => t.FromStepId)
-                .OnDelete(DeleteBehavior.Restrict);
-            // ToStep => IncomingTransitions
+                .OnDelete(DeleteBehavior.Restrict); 
+
+            // 🔹 ToStep => IncomingTransitions
             builder.HasOne(t => t.ToStep)
                 .WithMany(s => s.IncomingTransitions)
                 .HasForeignKey(t => t.ToStepId)
-                .OnDelete(DeleteBehavior.Restrict);
-            
+                .OnDelete(DeleteBehavior.Restrict); 
 
+            // 🔹 FromStatus relationship
+            builder.HasOne(t => t.FromStatus)
+                .WithMany() 
+                .HasForeignKey(t => t.FromStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 🔹 ToStatus relationship
+            builder.HasOne(t => t.ToStatus)
+                .WithMany()
+                .HasForeignKey(t => t.ToStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 🔹 ActionTypeEntity relationship
+            builder.HasOne(t => t.ActionTypeEntity)
+                .WithMany()
+                .HasForeignKey(t => t.ActionTypeEntityId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

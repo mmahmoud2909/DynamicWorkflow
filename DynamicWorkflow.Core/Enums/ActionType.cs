@@ -2,16 +2,19 @@
 {
     public enum ActionType
     {
+
+        Accept = 1,
+        Reject = 2,
+        Hold = 3
+    } }
+
         // ===== General / Core Actions =====
         //Create,
         //StartProcess,
         //CompleteProcess,
-        Accept,
-        Reject,
-        //Hold,
         //Notify,
         //Skip,
-        RequestChanges,
+        //RequestChanges,
         //AddInfoAttachments,
         //SystemApproval,
 
@@ -92,5 +95,3 @@
         //FinalApproval,
         //GrnGeneration,
         //InvoiceProcessing
-    }
-}

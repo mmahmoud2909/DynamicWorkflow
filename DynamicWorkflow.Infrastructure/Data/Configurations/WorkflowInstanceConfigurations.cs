@@ -24,7 +24,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.HasOne(ins => ins.Workflow)
                 .WithMany(wf => wf.Instances)
                 .HasForeignKey(t => t.WorkflowId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
             //relationship one step may have many instances
             builder.HasOne(ins => ins.CurrentStep)
                 .WithMany().HasForeignKey(f=>f.CurrentStepId)

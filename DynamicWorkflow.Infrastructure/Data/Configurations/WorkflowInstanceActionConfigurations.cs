@@ -19,11 +19,14 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             //Workflow instance has many =>workflow instance action 
             builder.HasKey(x => x.Id);
             builder.HasOne(wfiaction => wfiaction.WorkflowInstance).WithMany(ins => ins.WorkflowInstanceActions).HasForeignKey(fk => fk.WorkflowInstanceId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
             //workflowinstancestep=>has one instance action 
             builder.HasOne(wfia => wfia.WorkFlowInstanceStep).WithOne(wfis => wfis.WorkflowInstanceAction)
                 .HasForeignKey<WorkflowInstanceAction>(wfi => wfi.WorkFlowInstanceStepId);
                 
+            //
+            builder.HasOne(wfi=>wfi.workflowStatus)
+                .WithMany(ws=>ws.WorkflowInstanceActions).HasForeignKey(k=>k.WorkflowStatusId).OnDelete(DeleteBehavior.NoAction);
 
         }
         

@@ -8,10 +8,17 @@ namespace DynamicWorkflow.Core.Entities
 		public string Name { get; set; }    // e.g. "Manager Approval"
         public string? Comments { get; set; } = null;
         public int Order { get; set; }      // execution order
-        public Status stepStatus { get; set; } = Status.Pending;
-		public ActionType stepActionTypes { get; set; }
+        public Status stepStatus { get; set; } = Status.Pending;//enum will convert to table 
+		public int WorkflowStatusId {  get; set; }
+		public WorkflowStatus workflowStatus { get; set; }
+		public int ActionTypeEntityId { get; set; }
+		public ActionTypeEntity actionTypeEntity { get; set; }
+		public ActionType stepActionTypes { get; set; }//will convert to table
 		public bool isEndStep {  get; set; }
-		public Roles AssignedRole { get; set; }
+		public Roles AssignedRole { get; set; }//enum will convert it into tables 
+		public int AppRoleId {  get; set; }
+		public AppRole appRole { get; set; }
+
 		[JsonIgnore]
 		public Workflow workflow { get; set; }
 		public int WorkflowId {  get; set; }

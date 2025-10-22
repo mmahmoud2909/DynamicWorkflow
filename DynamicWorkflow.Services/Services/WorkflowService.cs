@@ -20,7 +20,7 @@ namespace DynamicWorkflow.Services.Services
             var instance = new WorkflowInstance
             {
                 WorkflowId = workflowId,
-                State = Status.Created,
+                State = Status.InProgress,
                 CurrentStepId = 0,
                 Transitions = new List<WorkflowTransition>()
             };
