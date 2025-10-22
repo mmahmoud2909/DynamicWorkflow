@@ -4,6 +4,7 @@ using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DynamicWorkflow.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationIdentityDbContext))]
-    partial class ApplicationIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251022090244_Solvingstatusid")]
+    partial class Solvingstatusid
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -337,14 +340,9 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Property<int>("WorkflowStatusId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("WorkflowStatusId1")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("WorkflowStatusId");
-
-                    b.HasIndex("WorkflowStatusId1");
 
                     b.ToTable("Workflows", (string)null);
                 });
@@ -369,7 +367,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Property<int>("State")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasDefaultValue(1);
+                        .HasDefaultValue(5);
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -400,6 +398,9 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("int");
 
                     b.Property<int>("ActionTypeEntityId")
                         .HasColumnType("int");
@@ -788,14 +789,10 @@ namespace DynamicWorkflow.Infrastructure.Migrations
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.Workflow", b =>
                 {
                     b.HasOne("DynamicWorkflow.Core.Entities.WorkflowStatus", "WorkflowStatus")
-                        .WithMany()
-                        .HasForeignKey("WorkflowStatusId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("DynamicWorkflow.Core.Entities.WorkflowStatus", null)
                         .WithMany("workflows")
-                        .HasForeignKey("WorkflowStatusId1");
+                        .HasForeignKey("WorkflowStatusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("WorkflowStatus");
                 });

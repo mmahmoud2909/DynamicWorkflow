@@ -10,55 +10,37 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
 {
     public static class ApplicationdbcontextSeed
     {
-        
         public static async Task SeedDataAsync(IServiceProvider services)
         {
-
-            using var scope = services.CreateScope();//defines the services i want to get and already registed in my program
+            using var scope = services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
             var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<ApplicationRole>>();
 
-            await context.Database.MigrateAsync();//ensure database exist and last version  
+            await context.Database.MigrateAsync();
 
-            
-            // 1. Roles
+            // 1️⃣ Identity Roles
             string[] RoleNames = { "Admin", "Manager", "Employee", "HR" };
             foreach (var roleName in RoleNames)
             {
                 if (!await roleManager.RoleExistsAsync(roleName))
-                {
                     await roleManager.CreateAsync(new ApplicationRole { Name = roleName });
-                }
             }
 
-            // 2. Departments
-            var itDept = await context.Departments.FirstOrDefaultAsync(d => d.Name == "IT");
-            if (itDept == null)
+            // 2️⃣ Departments
+            string[] departments = { "IT", "Finance", "HR" };
+            foreach (var deptName in departments)
             {
-                itDept = new Department { Id = Guid.NewGuid(), Name = "IT" };
-                context.Departments.Add(itDept);
+                if (!await context.Departments.AnyAsync(d => d.Name == deptName))
+                    context.Departments.Add(new Department { Id = Guid.NewGuid(), Name = deptName });
             }
-
-            var financeDept = await context.Departments.FirstOrDefaultAsync(d => d.Name == "Finance");
-            if (financeDept == null)
-            {
-                financeDept = new Department { Id = Guid.NewGuid(), Name = "Finance" };
-                context.Departments.Add(financeDept);
-            }
-
-            var hrDept = await context.Departments.FirstOrDefaultAsync(d => d.Name == "HR");
-            if (hrDept == null)
-            {
-                hrDept = new Department { Id = Guid.NewGuid(), Name = "HR" };
-                context.Departments.Add(hrDept);
-            }
-
             await context.SaveChangesAsync();
-            // 3. Manager
+
+            // 3️⃣ Manager User
             var managerEmail = "manager@sys.com";
             if (await userManager.FindByEmailAsync(managerEmail) == null)
             {
+                var dept = await context.Departments.FirstAsync(d => d.Name == "IT");
                 var manager = new ApplicationUser
                 {
                     UserName = managerEmail,
@@ -67,16 +49,17 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
                     NormalizedUserName = managerEmail.ToUpper(),
                     DisplayName = "System Manager",
                     RegisteredAt = DateTime.UtcNow,
-                    DepartmentId = itDept.Id
+                    DepartmentId = dept.Id
                 };
                 await userManager.CreateAsync(manager, "Manager@123");
                 await userManager.AddToRoleAsync(manager, "Manager");
             }
 
-            // 4. Employee
+            // 4️⃣ Employee User
             var empEmail = "employee@sys.com";
             if (await userManager.FindByEmailAsync(empEmail) == null)
             {
+                var dept = await context.Departments.FirstAsync(d => d.Name == "IT");
                 var employee = new ApplicationUser
                 {
                     UserName = empEmail,
@@ -85,16 +68,17 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
                     NormalizedUserName = empEmail.ToUpper(),
                     DisplayName = "Regular Employee",
                     RegisteredAt = DateTime.UtcNow,
-                    DepartmentId = itDept.Id
+                    DepartmentId = dept.Id
                 };
                 await userManager.CreateAsync(employee, "Employee@123");
                 await userManager.AddToRoleAsync(employee, "Employee");
             }
 
-            // 6. Admin
+            // 5️⃣ Admin User
             var adminEmail = "admin@sys.com";
             if (await userManager.FindByEmailAsync(adminEmail) == null)
             {
+                var dept = await context.Departments.FirstAsync(d => d.Name == "IT");
                 var admin = new ApplicationUser
                 {
                     UserName = adminEmail,
@@ -103,26 +87,77 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
                     NormalizedUserName = adminEmail.ToUpper(),
                     DisplayName = "System Administrator",
                     RegisteredAt = DateTime.UtcNow,
-                    DepartmentId = itDept.Id
+                    DepartmentId = dept.Id
                 };
 
                 var result = await userManager.CreateAsync(admin, "Admin@123");
                 if (result.Succeeded)
-                {
                     await userManager.AddToRoleAsync(admin, "Admin");
-                }
+            }
+
+            // 6️⃣ Action Types
+            if (!await context.ActionTypes.AnyAsync())
+            {
+                var actionTypes = new[]
+                {
+                    new ActionTypeEntity { Name = "Accept" },
+                    new ActionTypeEntity { Name = "Reject" },
+                    new ActionTypeEntity { Name = "Hold" }
+                };
+                await context.ActionTypes.AddRangeAsync(actionTypes);
+                await context.SaveChangesAsync();
+            }
+
+            // 7️⃣ App Roles
+            if (!await context.AppRoles.AnyAsync())
+            {
+                var appRoles = new[]
+                {
+                    new AppRole { Name = "Logistics" },
+                    new AppRole { Name = "Finance" },
+                    new AppRole { Name = "Employee" },
+                    new AppRole { Name = "Manager" },
+                    new AppRole { Name = "HR" },
+                    new AppRole { Name = "User" },
+                    new AppRole { Name = "Director" },
+                    new AppRole { Name = "CLevel" },
+                    new AppRole { Name = "Technical" },
+                    new AppRole { Name = "Planning" },
+                    new AppRole { Name = "Treasury" },
+                    new AppRole { Name = "Procurement" },
+                    new AppRole { Name = "Warehouse" },
+                    new AppRole { Name = "QC" },
+                    new AppRole { Name = "Supervisor" },
+                    new AppRole { Name = "StoreKeeper" }
+                };
+
+                await context.AppRoles.AddRangeAsync(appRoles);
+                await context.SaveChangesAsync();
+            }
+
+            // 8️⃣ Workflow Statuses
+            if (!await context.WorkflowStatuses.AnyAsync())
+            {
+                var statuses = new[]
+                {
+                    new WorkflowStatus { Name = "Pending" },
+                    new WorkflowStatus { Name = "InProgress" },
+                    new WorkflowStatus { Name = "Accepted" },
+                    new WorkflowStatus { Name = "Rejected" },
+                    new WorkflowStatus { Name = "Completed" }
+                };
+                await context.WorkflowStatuses.AddRangeAsync(statuses);
+                await context.SaveChangesAsync();
             }
         }
 
+        // Existing workflow seeding logic
         public static IApplicationBuilder SeedWorkflowData(this IApplicationBuilder app)
         {
             using (var scope = app.ApplicationServices.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
                 context.Database.Migrate();
-
-                // Clear existing data
-               // ClearExistingData(context);
 
                 if (!context.Workflows.Any())
                 {
@@ -136,45 +171,40 @@ namespace DynamicWorkflow.Infrastructure.DataSeeding
 
         private static void ClearExistingData(ApplicationIdentityDbContext context)
         {
-            // Clear in correct order to respect foreign key constraints
             context.WorkflowTransitions.RemoveRange(context.WorkflowTransitions);
             context.StepRoles.RemoveRange(context.StepRoles);
             context.WorkflowSteps.RemoveRange(context.WorkflowSteps);
             context.Workflows.RemoveRange(context.Workflows);
-
             context.SaveChanges();
         }
 
-        private static void SeedWorkflowsWithRelationships(ApplicationIdentityDbContext context)
+private static void SeedWorkflowsWithRelationships(ApplicationIdentityDbContext context)
+{
+    // Make sure we have at least one WorkflowStatus
+    var defaultStatus = context.WorkflowStatuses.FirstOrDefault(s => s.Name == "Pending")
+        ?? context.WorkflowStatuses.First(); // fallback
+
+    if (!context.Workflows.Any(w => w.Name == "ServiceRepairProcurement"))
+    {
+        var workflows = ServiceRepairWorkflowSeedData.GetWorkflows();
+
+        // ✅ Assign a valid WorkflowStatusId to each workflow
+        foreach (var wf in workflows)
         {
-            // ✅ Add only ServiceRepairProcurement workflows if not already added
-            if (!context.Workflows.Any(w => w.Name == "ServiceRepairProcurement"))
-            {
-                var serviceWorkflows = ServiceRepairWorkflowSeedData.GetWorkflows();
-                context.Workflows.AddRange(serviceWorkflows);
-                context.SaveChanges();
-
-                Console.WriteLine("✅ ServiceRepairProcurement workflows added successfully!");
-            }
-            else
-            {
-                Console.WriteLine("⚠️ ServiceRepairProcurement workflows already exist — skipping seeding.");
-            }
+            wf.WorkflowStatusId = defaultStatus.Id;
         }
-        
-       // var workflows = WorkflowSeedData.GetWorkflows();
-            // Add workflows first to get their IDs
-        //    context.Workflows.AddRange(workflows);
-        //    context.SaveChanges();
 
-        //    // Now create transitions after all steps have been saved and have IDs
-        //    foreach (var workflow in workflows)
-        //    {
-        //        CreateTransitionsForWorkflow(workflow);
-        //    }
+        context.Workflows.AddRange(workflows);
+        context.SaveChanges();
 
-        //    context.SaveChanges();
-        //}
+        Console.WriteLine("✅ ServiceRepairProcurement workflows added successfully!");
+    }
+    else
+    {
+        Console.WriteLine("⚠️ ServiceRepairProcurement workflows already exist — skipping seeding.");
+    }
+}
+
 
         private static void CreateTransitionsForWorkflow(Workflow workflow)
         {

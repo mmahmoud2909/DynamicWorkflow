@@ -8,8 +8,8 @@ namespace DynamicWorkflow.Core.Enums
 {
     public enum Roles
     {
-        Logistics,//0
-        Finance,//1
+        Logistics = 1,//0
+        Finance,
         Employee,
         Manager,
         HR,

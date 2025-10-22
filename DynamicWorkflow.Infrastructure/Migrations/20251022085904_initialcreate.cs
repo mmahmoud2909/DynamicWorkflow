@@ -6,11 +6,39 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DynamicWorkflow.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class initialcreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "ActionTypes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActionTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AppRoles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppRoles", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -38,22 +66,17 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Workflows",
+                name: "WorkflowStatuses",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    ParentWorkflowId = table.Column<int>(type: "int", nullable: true),
-                    Order = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Workflows", x => x.Id);
+                    table.PrimaryKey("PK_WorkflowStatuses", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -116,31 +139,27 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "WorkflowSteps",
+                name: "Workflows",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Comments = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    ParentWorkflowId = table.Column<int>(type: "int", nullable: true),
                     Order = table.Column<int>(type: "int", nullable: false),
-                    stepStatus = table.Column<int>(type: "int", nullable: false),
-                    stepActionTypes = table.Column<int>(type: "int", nullable: false),
-                    isEndStep = table.Column<bool>(type: "bit", nullable: false),
-                    AssignedRole = table.Column<int>(type: "int", nullable: false),
-                    WorkflowId = table.Column<int>(type: "int", nullable: false),
-                    AssignedUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Condition = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    WorkflowStatusId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WorkflowSteps", x => x.Id);
+                    table.PrimaryKey("PK_Workflows", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_WorkflowSteps_Workflows_WorkflowId",
-                        column: x => x.WorkflowId,
-                        principalTable: "Workflows",
+                        name: "FK_Workflows_WorkflowStatuses_WorkflowStatusId",
+                        column: x => x.WorkflowStatusId,
+                        principalTable: "WorkflowStatuses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -255,6 +274,57 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "WorkflowSteps",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Comments = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    Order = table.Column<int>(type: "int", nullable: false),
+                    stepStatus = table.Column<int>(type: "int", nullable: false),
+                    WorkflowStatusId = table.Column<int>(type: "int", nullable: false),
+                    ActionTypeEntityId = table.Column<int>(type: "int", nullable: false),
+                    stepActionTypes = table.Column<int>(type: "int", nullable: false),
+                    isEndStep = table.Column<bool>(type: "bit", nullable: false),
+                    AssignedRole = table.Column<int>(type: "int", nullable: false),
+                    AppRoleId = table.Column<int>(type: "int", nullable: false),
+                    WorkflowId = table.Column<int>(type: "int", nullable: false),
+                    AssignedUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Condition = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowSteps", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WorkflowSteps_ActionTypes_ActionTypeEntityId",
+                        column: x => x.ActionTypeEntityId,
+                        principalTable: "ActionTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_WorkflowSteps_AppRoles_AppRoleId",
+                        column: x => x.AppRoleId,
+                        principalTable: "AppRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_WorkflowSteps_WorkflowStatuses_WorkflowStatusId",
+                        column: x => x.WorkflowStatusId,
+                        principalTable: "WorkflowStatuses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_WorkflowSteps_Workflows_WorkflowId",
+                        column: x => x.WorkflowId,
+                        principalTable: "Workflows",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "StepRoles",
                 columns: table => new
                 {
@@ -285,12 +355,25 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     WorkflowId = table.Column<int>(type: "int", nullable: false),
                     CurrentStepId = table.Column<int>(type: "int", nullable: false),
                     State = table.Column<int>(type: "int", nullable: false, defaultValue: 5),
+                    WorkflowStatusId = table.Column<int>(type: "int", nullable: false),
+                    ActionTypeEntityId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowInstances", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WorkflowInstances_ActionTypes_ActionTypeEntityId",
+                        column: x => x.ActionTypeEntityId,
+                        principalTable: "ActionTypes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_WorkflowInstances_WorkflowStatuses_WorkflowStatusId",
+                        column: x => x.WorkflowStatusId,
+                        principalTable: "WorkflowStatuses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_WorkflowInstances_WorkflowSteps_CurrentStepId",
                         column: x => x.CurrentStepId,
@@ -302,7 +385,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                         column: x => x.WorkflowId,
                         principalTable: "Workflows",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -315,8 +398,10 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     StepId = table.Column<int>(type: "int", nullable: false),
                     PerformedByUserId = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "Pending"),
+                    WorkflowStatusId = table.Column<int>(type: "int", nullable: false),
                     Comments = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActionTypeEntityId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -324,11 +409,22 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_WorkFlowInstanceSteps", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_WorkFlowInstanceSteps_ActionTypes_ActionTypeEntityId",
+                        column: x => x.ActionTypeEntityId,
+                        principalTable: "ActionTypes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_WorkFlowInstanceSteps_WorkflowInstances_InstanceId",
                         column: x => x.InstanceId,
                         principalTable: "WorkflowInstances",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WorkFlowInstanceSteps_WorkflowStatuses_WorkflowStatusId",
+                        column: x => x.WorkflowStatusId,
+                        principalTable: "WorkflowStatuses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_WorkFlowInstanceSteps_WorkflowSteps_StepId",
                         column: x => x.StepId,
@@ -346,12 +442,17 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     FromStepId = table.Column<int>(type: "int", nullable: false),
                     ToStepId = table.Column<int>(type: "int", nullable: true),
                     WorkflowId = table.Column<int>(type: "int", nullable: false),
-                    Action = table.Column<int>(type: "int", nullable: false),
+                    ActionTypeEntityId = table.Column<int>(type: "int", nullable: false),
+                    FromStatusId = table.Column<int>(type: "int", nullable: true),
+                    ToStatusId = table.Column<int>(type: "int", nullable: true),
                     FromState = table.Column<int>(type: "int", nullable: false),
                     ToState = table.Column<int>(type: "int", nullable: false),
+                    Action = table.Column<int>(type: "int", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
                     PerformedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ActionTypeEntityId1 = table.Column<int>(type: "int", nullable: true),
                     WorkflowInstanceId = table.Column<int>(type: "int", nullable: true),
+                    WorkflowStatusId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -359,9 +460,37 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowTransitions", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_WorkflowTransitions_ActionTypes_ActionTypeEntityId",
+                        column: x => x.ActionTypeEntityId,
+                        principalTable: "ActionTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WorkflowTransitions_ActionTypes_ActionTypeEntityId1",
+                        column: x => x.ActionTypeEntityId1,
+                        principalTable: "ActionTypes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_WorkflowTransitions_WorkflowInstances_WorkflowInstanceId",
                         column: x => x.WorkflowInstanceId,
                         principalTable: "WorkflowInstances",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_WorkflowTransitions_WorkflowStatuses_FromStatusId",
+                        column: x => x.FromStatusId,
+                        principalTable: "WorkflowStatuses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WorkflowTransitions_WorkflowStatuses_ToStatusId",
+                        column: x => x.ToStatusId,
+                        principalTable: "WorkflowStatuses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WorkflowTransitions_WorkflowStatuses_WorkflowStatusId",
+                        column: x => x.WorkflowStatusId,
+                        principalTable: "WorkflowStatuses",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_WorkflowTransitions_WorkflowSteps_FromStepId",
@@ -380,7 +509,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                         column: x => x.WorkflowId,
                         principalTable: "Workflows",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -392,10 +521,12 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     WorkflowInstanceId = table.Column<int>(type: "int", nullable: false),
                     PerformedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ActionType = table.Column<int>(type: "int", nullable: false),
+                    ActionTypeEntityId = table.Column<int>(type: "int", nullable: false),
                     Comments = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PerformedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     WorkFlowInstanceStepId = table.Column<int>(type: "int", nullable: false),
                     WorkflowStepId = table.Column<int>(type: "int", nullable: false),
+                    WorkflowStatusId = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -403,17 +534,27 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowInstanceActions", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_WorkflowInstanceActions_ActionTypes_ActionTypeEntityId",
+                        column: x => x.ActionTypeEntityId,
+                        principalTable: "ActionTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_WorkflowInstanceActions_WorkFlowInstanceSteps_WorkFlowInstanceStepId",
                         column: x => x.WorkFlowInstanceStepId,
                         principalTable: "WorkFlowInstanceSteps",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_WorkflowInstanceActions_WorkflowInstances_WorkflowInstanceId",
                         column: x => x.WorkflowInstanceId,
                         principalTable: "WorkflowInstances",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_WorkflowInstanceActions_WorkflowStatuses_WorkflowStatusId",
+                        column: x => x.WorkflowStatusId,
+                        principalTable: "WorkflowStatuses",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
@@ -471,6 +612,11 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 column: "StepId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInstanceActions_ActionTypeEntityId",
+                table: "WorkflowInstanceActions",
+                column: "ActionTypeEntityId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstanceActions_WorkflowInstanceId",
                 table: "WorkflowInstanceActions",
                 column: "WorkflowInstanceId");
@@ -480,6 +626,16 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 table: "WorkflowInstanceActions",
                 column: "WorkFlowInstanceStepId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInstanceActions_WorkflowStatusId",
+                table: "WorkflowInstanceActions",
+                column: "WorkflowStatusId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInstances_ActionTypeEntityId",
+                table: "WorkflowInstances",
+                column: "ActionTypeEntityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstances_CurrentStepId",
@@ -492,6 +648,16 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 column: "WorkflowId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInstances_WorkflowStatusId",
+                table: "WorkflowInstances",
+                column: "WorkflowStatusId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkFlowInstanceSteps_ActionTypeEntityId",
+                table: "WorkFlowInstanceSteps",
+                column: "ActionTypeEntityId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkFlowInstanceSteps_InstanceId",
                 table: "WorkFlowInstanceSteps",
                 column: "InstanceId");
@@ -502,14 +668,59 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 column: "StepId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkFlowInstanceSteps_WorkflowStatusId",
+                table: "WorkFlowInstanceSteps",
+                column: "WorkflowStatusId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Workflows_WorkflowStatusId",
+                table: "Workflows",
+                column: "WorkflowStatusId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSteps_ActionTypeEntityId",
+                table: "WorkflowSteps",
+                column: "ActionTypeEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSteps_AppRoleId",
+                table: "WorkflowSteps",
+                column: "AppRoleId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowSteps_WorkflowId",
                 table: "WorkflowSteps",
                 column: "WorkflowId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSteps_WorkflowStatusId",
+                table: "WorkflowSteps",
+                column: "WorkflowStatusId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowTransitions_ActionTypeEntityId",
+                table: "WorkflowTransitions",
+                column: "ActionTypeEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowTransitions_ActionTypeEntityId1",
+                table: "WorkflowTransitions",
+                column: "ActionTypeEntityId1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowTransitions_FromStatusId",
+                table: "WorkflowTransitions",
+                column: "FromStatusId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowTransitions_FromStepId",
                 table: "WorkflowTransitions",
                 column: "FromStepId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowTransitions_ToStatusId",
+                table: "WorkflowTransitions",
+                column: "ToStatusId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowTransitions_ToStepId",
@@ -525,6 +736,11 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 name: "IX_WorkflowTransitions_WorkflowInstanceId",
                 table: "WorkflowTransitions",
                 column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowTransitions_WorkflowStatusId",
+                table: "WorkflowTransitions",
+                column: "WorkflowStatusId");
         }
 
         /// <inheritdoc />
@@ -576,7 +792,16 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 name: "WorkflowSteps");
 
             migrationBuilder.DropTable(
+                name: "ActionTypes");
+
+            migrationBuilder.DropTable(
+                name: "AppRoles");
+
+            migrationBuilder.DropTable(
                 name: "Workflows");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowStatuses");
         }
     }
 }

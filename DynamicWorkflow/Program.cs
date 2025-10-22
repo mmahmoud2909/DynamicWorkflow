@@ -1,8 +1,9 @@
-using DynamicWorkflow.APIs.Extenstions;
-using DynamicWorkflow.Core.Interfaces;
+﻿using DynamicWorkflow.APIs.Extenstions;
+using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Infrastructure.DataSeeding;
 using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
@@ -65,13 +66,30 @@ namespace DynamicWorkflow.APIs
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+                var context = services.GetRequiredService<ApplicationIdentityDbContext>();
 
                 await UsersAndRolesSeedData.SeedAsync(services);
 
                 await ApplicationdbcontextSeed.SeedDataAsync(services);
 
-                var context = services.GetRequiredService<ApplicationIdentityDbContext>();
+                if (!context.WorkflowStatuses.Any())
+                {
+                    context.WorkflowStatuses.AddRange(
+                        new WorkflowStatus { Name = "Pending" },
+                        new WorkflowStatus { Name = "InProgress" },
+                        new WorkflowStatus { Name = "Completed" },
+                        new WorkflowStatus { Name = "Rejected" }
+                    );
+                    await context.SaveChangesAsync();
+                }
+                // 3️⃣ Now safely seed workflows
+                var pendingStatus = await context.WorkflowStatuses.FirstAsync(s => s.Name == "Pending");
+
                 var serviceRepairWorkflows = ServiceRepairWorkflowSeedData.GetWorkflows();
+                foreach (var wf in serviceRepairWorkflows)
+                {
+                    wf.WorkflowStatusId = pendingStatus.Id; // ✅ assign existing FK
+                }
                 context.Workflows.AddRange(serviceRepairWorkflows);
                 await context.SaveChangesAsync();
             }
@@ -142,7 +160,6 @@ namespace DynamicWorkflow.APIs
             {
                 endpoints.MapControllers();
             });
-
             app.Run();
         }
     }

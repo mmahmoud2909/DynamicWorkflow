@@ -27,17 +27,22 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.HasMany(wf=>wf.Steps)
                 .WithOne(s=>s.workflow)
                 .HasForeignKey(wfk=>wfk.WorkflowId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
             //one Workflow has Many Transitions 
             builder.HasMany(wft=>wft.Transitions)
-                .WithOne(wf=>wf.workflow)
+                .WithOne(wf=>wf.Workflow)
                 .HasForeignKey(wfk=>wfk.WorkflowId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
             //one Workflow has Many Instances
             builder.HasMany(wf => wf.Instances)
                 .WithOne(ins => ins.Workflow)
                 .HasForeignKey(wfi => wfi.WorkflowId)
                 .OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(w => w.WorkflowStatus)
+       .WithMany()
+       .HasForeignKey(w => w.WorkflowStatusId)
+       .OnDelete(DeleteBehavior.NoAction);
+
         }
     }
 }

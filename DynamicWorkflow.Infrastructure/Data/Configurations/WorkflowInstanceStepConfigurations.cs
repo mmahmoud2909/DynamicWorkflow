@@ -47,7 +47,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
                     .OnDelete(DeleteBehavior.Restrict);
             //one instance step =>has one instance action 
             builder.HasOne(wfia => wfia.WorkflowInstanceAction).WithOne(wfis => wfis.WorkFlowInstanceStep)
-                .HasForeignKey<WorkflowInstanceAction>(fk => fk.WorkFlowInstanceStepId).OnDelete(DeleteBehavior.Cascade);
+                .HasForeignKey<WorkflowInstanceAction>(fk => fk.WorkFlowInstanceStepId).OnDelete(DeleteBehavior.Restrict);
 
                 
                
