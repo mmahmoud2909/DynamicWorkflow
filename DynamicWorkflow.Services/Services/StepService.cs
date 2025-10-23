@@ -58,6 +58,7 @@ namespace DynamicWorkflow.Services.Services
                 FromStepId = step.Id,
                 ToStepId = (int)(workflow.Steps.OrderBy(s => s.Order).FirstOrDefault(s => s.Order > step.Order)?.Id),
                 Action = action,
+                ActionTypeEntityId = (int)action,
                 FromState = step.stepStatus,
                 ToState = Status.Pending,
                 Timestamp = DateTime.UtcNow,

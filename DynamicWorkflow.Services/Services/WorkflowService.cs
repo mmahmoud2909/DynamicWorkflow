@@ -22,7 +22,8 @@ namespace DynamicWorkflow.Services.Services
                 WorkflowId = workflowId,
                 State = Status.InProgress,
                 CurrentStepId = 0,
-                Transitions = new List<WorkflowTransition>()
+                Transitions = new List<WorkflowTransition>(),
+                WorkflowStatusId = (int)Status.InProgress
             };
 
             await _workflow.AddAsync(instance);
@@ -39,6 +40,7 @@ namespace DynamicWorkflow.Services.Services
                 instance.Transitions.Add(new WorkflowTransition
                 {
                     Action = action,
+                    ActionTypeEntityId = (int)action,
                     FromState = instance.State,
                     ToState = newState,
                     Timestamp = DateTime.UtcNow,
@@ -64,6 +66,7 @@ namespace DynamicWorkflow.Services.Services
                 instance.Transitions.Add(new WorkflowTransition
                 {
                     Action = action,
+                    ActionTypeEntityId = (int)action,
                     FromState = instance.State,
                     ToState = newState,
                     Timestamp = DateTime.UtcNow,

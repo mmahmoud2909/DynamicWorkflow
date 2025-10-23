@@ -38,15 +38,9 @@ namespace DynamicWorkflow.Services.Services
                 .ToListAsync();
 
             return users.Select(u => new UserDto(
-                u.Id,
-                u.UserName!,
-                u.Email!,
-                u.DisplayName,
-                u.DepartmentId,
-                u.ManagerId,
-                u.IsPendingDeletion,
-                u.RegisteredAt,
-                u.ProfilePicUrl
+                u.Id, u.UserName!, u.Email!, u.DisplayName,
+    u.DepartmentId, u.ManagerId, u.IsPendingDeletion,
+    u.RegisteredAt, u.ProfilePicUrl
             )).ToList();
         }
 

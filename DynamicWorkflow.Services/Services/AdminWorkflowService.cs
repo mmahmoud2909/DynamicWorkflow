@@ -5,6 +5,7 @@ using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace DynamicWorkflow.Services.Services
 {
@@ -121,6 +122,7 @@ namespace DynamicWorkflow.Services.Services
                 ToStepId = dto.ToStepId,
                 WorkflowId = workflowId,
                 Action = dto.Action,
+                ActionTypeEntityId = (int)dto.Action,
                 FromState = dto.FromState,
                 ToState = dto.ToState,
                 Timestamp = DateTime.UtcNow,
