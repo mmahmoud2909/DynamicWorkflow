@@ -34,7 +34,9 @@ namespace DynamicWorkflow.Services.Services
                 Workflow = workflow,
                 CurrentStepId = firstStep.Id,
                 CurrentStep = firstStep,
-                State = Status.InProgress
+                State = Status.InProgress,
+                WorkflowStatusId = (int)Status.InProgress,
+                StatusText = $"Pending on {firstStep.Name}"
             };
 
             _context.WorkflowInstances.Add(instance);
@@ -81,7 +83,8 @@ namespace DynamicWorkflow.Services.Services
                     WorkflowId = instance.WorkflowId,
                     FromStepId = currentStep.Id,
                     Action = action,
-                    FromState = currentStep.stepStatus,
+                    ActionTypeEntityId = (int)action,
+                    FromState = instance.State,
                     Timestamp = DateTime.UtcNow,
                     PerformedBy = $"{currentUser.DisplayName} ({string.Join(',', userRoles)})"
                 };
@@ -91,53 +94,55 @@ namespace DynamicWorkflow.Services.Services
 
                 if (action == ActionType.Accept)
                 {
-                    currentStep.stepStatus = Status.Accepted;
-
                     if (nextStep != null)
                     {
-                        nextStep.stepStatus = Status.InProgress;
                         instance.CurrentStepId = nextStep.Id;
                         instance.CurrentStep = nextStep;
+                        instance.State = Status.Pending;
+                        instance.StatusText = $"Pending on {nextStep.Name}";
+
                         transition.ToStepId = nextStep.Id;
-                        transition.ToState = Status.InProgress;
-                        direction = "Forward";
+                        transition.ToState = Status.Pending;
+                        direction = "MovedForwardPending";
                     }
                     else
                     {
                         instance.State = Status.Completed;
+                        instance.StatusText = "Completed";
                         transition.ToState = Status.Completed;
                         direction = "Completed";
                     }
                 }
                 else
                 {
-                    currentStep.stepStatus = Status.Rejected;
-
                     if (previousStep != null)
                     {
-                        previousStep.stepStatus = Status.InProgress;
                         instance.CurrentStepId = previousStep.Id;
                         instance.CurrentStep = previousStep;
+                        instance.State = Status.Pending;
+                        instance.StatusText = $"Pending on {previousStep.Name}";
+
                         transition.ToStepId = previousStep.Id;
-                        transition.ToState = Status.InProgress;
-                        direction = "Rollback";
+                        transition.ToState = Status.Pending;
+                        direction = "RollbackPending";
                     }
                     else
                     {
                         instance.State = Status.Rejected;
+                        instance.StatusText = $"Rejected by {currentStep.Name}";
                         transition.ToState = Status.Rejected;
-                        direction = "StartRollback";
+                        direction = "RejectedAtStart";
                     }
                 }
 
-                instance.State = instance.CurrentStep.stepStatus;
+                //instance.State = instance.CurrentStep.stepStatus;
 
-                if (instance.Workflow.Steps.All(s => s.stepStatus == Status.Accepted))
-                    instance.State = Status.Completed;
-                else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.Rejected))
-                    instance.State = Status.Rejected;
-                else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.InProgress))
-                    instance.State = Status.InProgress;
+                //if (instance.Workflow.Steps.All(s => s.stepStatus == Status.Accepted))
+                //    instance.State = Status.Completed;
+                //else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.Rejected))
+                //    instance.State = Status.Rejected;
+                //else if (instance.Workflow.Steps.Any(s => s.stepStatus == Status.InProgress))
+                //    instance.State = Status.InProgress;
 
                 instance.Transitions.Add(transition);
                 _context.WorkflowTransitions.Add(transition);
@@ -167,7 +172,9 @@ namespace DynamicWorkflow.Services.Services
                                 Workflow = nextWorkflow,
                                 CurrentStepId = firstStepOfNext.Id,
                                 CurrentStep = firstStepOfNext,
-                                State = Status.InProgress
+                                State = Status.InProgress,
+                                WorkflowStatusId = (int) Status.InProgress,
+                                StatusText = $"Pending on {firstStepOfNext.Name}"
                             };
 
                             _context.WorkflowInstances.Add(nextWorkflowInstance);

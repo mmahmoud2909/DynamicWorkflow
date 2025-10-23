@@ -5,6 +5,7 @@ using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace DynamicWorkflow.Infrastructure.DataSeeding
 {
@@ -218,6 +219,7 @@ private static void SeedWorkflowsWithRelationships(ApplicationIdentityDbContext 
                     FromStepId = steps[i].Id,
                     ToStepId = steps[i + 1].Id,
                     Action = steps[i].stepActionTypes,
+                    ActionTypeEntityId = (int)steps[i].stepActionTypes,
                     FromState = Status.Pending,
                     ToState = Status.Pending,
                     Timestamp = DateTime.UtcNow,
