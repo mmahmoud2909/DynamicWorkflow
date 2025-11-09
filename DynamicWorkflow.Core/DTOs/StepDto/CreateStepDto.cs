@@ -1,15 +1,13 @@
-﻿using DynamicWorkflow.Core.Entities.Users;
-using DynamicWorkflow.Core.Enums;
-
-namespace DynamicWorkflow.Core.DTOs.StepDto
+﻿namespace DynamicWorkflow.Core.DTOs.StepDto
 {
     public class CreateStepDto
     {
-        public string stepName {  get; set; }
-        public Roles assignedRole { get; set; }
-        public bool isEndStep { get; set; }
-        public ActionType stepActionTypes { get; set; } 
-        public string? comments { get; set; }
-
+        public string StepName { get; set; }
+        public string? Comments { get; set; }
+        public int ActionTypeEntityId { get; set; }
+        public int WorkflowStatusId { get; set; }
+        public bool IsEndStep { get; set; }
+        public int AppRoleId { get; set; }
+        public int Order { get; set; }
     }
 }

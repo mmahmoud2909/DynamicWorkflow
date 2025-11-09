@@ -1,4 +1,4 @@
-﻿using DynamicWorkflow.Core.Enums;
+﻿using DynamicWorkflow.Core.Entities;
 
 namespace DynamicWorkflow.Core.DTOs.User
 {
@@ -6,11 +6,10 @@ namespace DynamicWorkflow.Core.DTOs.User
     {
         public string Username { get; set; }
         public string DisplayName { get; set; }
+        public AppRole Role { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
         public Guid DepartmentId { get; set; }
         public Guid? ManagerId { get; set; }
-        public Roles Role {  get; set; }
-
     }
 }

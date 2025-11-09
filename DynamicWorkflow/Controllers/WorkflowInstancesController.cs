@@ -1,6 +1,4 @@
-﻿using DynamicWorkflow.Core.Entities.Users;
-using DynamicWorkflow.Core.Enums;
-using DynamicWorkflow.Infrastructure.Identity;
+﻿using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +20,6 @@ namespace DynamicWorkflow.APIs.Controllers
             _context = context;
         }
 
-        // Create workflow instance       
         [HttpPost("create/{workflowId}")]
         [Authorize]
         public async Task<IActionResult> CreateInstance(int workflowId)
@@ -43,49 +40,40 @@ namespace DynamicWorkflow.APIs.Controllers
                 instanceId = instance.Id,
                 workflowId = instance.Workflow.Id,
                 workflowName = instance.Workflow.Name,
-                instanceState = instance.State.ToString(),
+                workflowStatus = instance.WorkflowStatus.Name,
 
                 currentStepId = instance.CurrentStepId,
                 currentStepName = instance.CurrentStep?.Name,
-                currentStepStatus = instance.CurrentStep?.stepStatus.ToString(),
-                currentAssignedRole = instance.CurrentStep?.AssignedRole.ToString(),
+                currentStepStatus = instance.CurrentStep?.workflowStatus.Name,
+                currentAssignedRole = instance.CurrentStep?.appRole.Name,
 
                 nextStepId = nextStep?.Id,
                 nextStepName = nextStep?.Name,
-                nextStepStatus = nextStep?.stepStatus.ToString(),
-                nextAssignedRole = nextStep?.AssignedRole.ToString(),
+                nextStepStatus = nextStep?.workflowStatus.Name,
+                nextAssignedRole = nextStep?.appRole.Name,
 
                 steps = instance.Workflow.Steps.Select(s => new
                 {
                     s.Id,
                     s.Name,
-                    Status = s.stepStatus.ToString(),
-                    InstanceState = s.stepStatus switch
-                    {
-                        Status.Accepted => Status.Accepted.ToString(),
-                        Status.Rejected => Status.Rejected.ToString(),
-                        Status.InProgress => Status.InProgress.ToString(),
-                        _ => instance.State.ToString()
-                    },
-                    AssignedRole = s.AssignedRole.ToString()
+                    Status = s.workflowStatus.Name,
+                    AssignedRole = s.appRole.Name
                 })
             });
         }
 
-        // 🟡 Perform action (Accept / Reject)
         [HttpPost("{instanceId}/action")]
         [Authorize]
-        public async Task<IActionResult> MakeAction(int instanceId, [FromQuery] ActionType action)
+        public async Task<IActionResult> MakeAction(int instanceId, [FromQuery] int actionTypeId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
             if (user == null)
                 return Unauthorized("User not found.");
 
-            var (completedInstance, nextWorkflowInstance) = await _instanceService.MakeActionAsync(instanceId, action, user);
+            var (completedInstance, nextWorkflowInstance) = await _instanceService.MakeActionAsync(instanceId, actionTypeId, user);
 
-            // If workflow completed and chained to next workflow, return the NEW workflow as active
-            if (nextWorkflowInstance != null && completedInstance.State == Status.Completed)
+            if (nextWorkflowInstance != null)
             {
                 var orderedSteps = nextWorkflowInstance.Workflow.Steps.OrderBy(s => s.Order).ToList();
                 var currentStep = nextWorkflowInstance.CurrentStep;
@@ -99,47 +87,35 @@ namespace DynamicWorkflow.APIs.Controllers
                     message = $"✅ Workflow '{completedInstance.Workflow.Name}' completed! Moved to '{nextWorkflowInstance.Workflow.Name}'.",
                     workflowChained = true,
 
-                    // NEW ACTIVE INSTANCE INFO
                     instanceId = nextWorkflowInstance.Id,
                     workflowId = nextWorkflowInstance.Workflow.Id,
                     workflowName = nextWorkflowInstance.Workflow.Name,
-                    instanceState = nextWorkflowInstance.State.ToString(),
+                    workflowStatus = nextWorkflowInstance.WorkflowStatus.Name,
 
-                    // Current Step of NEW workflow
                     currentStepId = currentStep?.Id,
                     currentStepName = currentStep?.Name,
-                    currentStepStatus = currentStep?.stepStatus.ToString(),
-                    currentAssignedRole = currentStep?.AssignedRole.ToString(),
+                    currentStepStatus = currentStep?.workflowStatus.Name,
+                    currentAssignedRole = currentStep?.appRole.Name,
 
-                    // Next Step of NEW workflow
                     nextStepId = nextStep?.Id,
                     nextStepName = nextStep?.Name,
-                    nextStepStatus = nextStep?.stepStatus.ToString(),
-                    nextAssignedRole = nextStep?.AssignedRole.ToString(),
+                    nextStepStatus = nextStep?.workflowStatus.Name,
+                    nextAssignedRole = nextStep?.appRole.Name,
 
-                    // Previous completed workflow info
                     previousWorkflow = new
                     {
                         instanceId = completedInstance.Id,
                         workflowId = completedInstance.Workflow.Id,
                         name = completedInstance.Workflow.Name,
-                        state = completedInstance.State.ToString()
+                        status = completedInstance.WorkflowStatus.Name
                     },
 
-                    // Steps of NEW workflow
                     steps = nextWorkflowInstance.Workflow.Steps.Select(s => new
                     {
                         s.Id,
                         s.Name,
-                        Status = s.stepStatus.ToString(),
-                        InstanceState = s.stepStatus switch
-                        {
-                            Status.Accepted => Status.Accepted.ToString(),
-                            Status.Rejected => Status.Rejected.ToString(),
-                            Status.InProgress => Status.InProgress.ToString(),
-                            _ => nextWorkflowInstance.State.ToString()
-                        },
-                        AssignedRole = s.AssignedRole.ToString()
+                        Status = s.workflowStatus.Name,
+                        AssignedRole = s.appRole.Name
                     })
                 });
             }
@@ -154,44 +130,34 @@ namespace DynamicWorkflow.APIs.Controllers
 
             return Ok(new
             {
-                message = completedInstance.State == Status.Completed
-                    ? "✅ All workflows completed!"
-                    : $"✅ Action '{action}' applied successfully.",
+                message = "✅ Action applied successfully.",
                 workflowChained = false,
 
                 instanceId = completedInstance.Id,
                 workflowId = completedInstance.Workflow.Id,
                 workflowName = completedInstance.Workflow.Name,
-                instanceState = completedInstance.State.ToString(),
+                workflowStatus = completedInstance.WorkflowStatus.Name,
 
                 currentStepId = currentStepNormal?.Id,
                 currentStepName = currentStepNormal?.Name,
-                currentStepStatus = currentStepNormal?.stepStatus.ToString(),
-                currentAssignedRole = currentStepNormal?.AssignedRole.ToString(),
+                currentStepStatus = currentStepNormal?.workflowStatus.Name,
+                currentAssignedRole = currentStepNormal?.appRole.Name,
 
                 nextStepId = nextStepNormal?.Id,
                 nextStepName = nextStepNormal?.Name,
-                nextStepStatus = nextStepNormal?.stepStatus.ToString(),
-                nextAssignedRole = nextStepNormal?.AssignedRole.ToString(),
+                nextStepStatus = nextStepNormal?.workflowStatus.Name,
+                nextAssignedRole = nextStepNormal?.appRole.Name,
 
                 steps = completedInstance.Workflow.Steps.Select(s => new
                 {
                     s.Id,
                     s.Name,
-                    Status = s.stepStatus.ToString(),
-                    InstanceState = s.stepStatus switch
-                    {
-                        Status.Accepted => Status.Accepted.ToString(),
-                        Status.Rejected => Status.Rejected.ToString(),
-                        Status.InProgress => Status.InProgress.ToString(),
-                        _ => completedInstance.State.ToString()
-                    },
-                    AssignedRole = s.AssignedRole.ToString()
+                    Status = s.workflowStatus.Name,
+                    AssignedRole = s.appRole.Name
                 })
             });
         }
 
-        // Get instance by ID
         [HttpGet("{id}")]
         [Authorize]
         public async Task<IActionResult> GetInstance(int id)
@@ -212,36 +178,28 @@ namespace DynamicWorkflow.APIs.Controllers
                 instanceId = instance.Id,
                 workflowId = instance.Workflow.Id,
                 workflowName = instance.Workflow.Name,
-                instanceState = instance.State.ToString(),
+                workflowStatus = instance.WorkflowStatus.Name,
 
                 currentStepId = currentStep?.Id,
                 currentStepName = currentStep?.Name,
-                currentStepStatus = currentStep?.stepStatus.ToString(),
-                currentAssignedRole = currentStep?.AssignedRole.ToString(),
+                currentStepStatus = currentStep?.workflowStatus.Name,
+                currentAssignedRole = currentStep?.appRole.Name,
 
                 nextStepId = nextStep?.Id,
                 nextStepName = nextStep?.Name,
-                nextStepStatus = nextStep?.stepStatus.ToString(),
-                nextAssignedRole = nextStep?.AssignedRole.ToString(),
+                nextStepStatus = nextStep?.workflowStatus.Name,
+                nextAssignedRole = nextStep?.appRole.Name,
 
                 steps = instance.Workflow.Steps.Select(s => new
                 {
                     s.Id,
                     s.Name,
-                    Status = s.stepStatus.ToString(),
-                    InstanceState = s.stepStatus switch
-                    {
-                        Status.Accepted => Status.Accepted.ToString(),
-                        Status.Rejected => Status.Rejected.ToString(),
-                        Status.InProgress => Status.InProgress.ToString(),
-                        _ => instance.State.ToString()
-                    },
-                    AssignedRole = s.AssignedRole.ToString()
+                    Status = s.workflowStatus.Name,
+                    AssignedRole = s.appRole.Name
                 })
             });
         }
 
-        // Get active workflow in chain
         [HttpGet("chain/{parentWorkflowId}/active")]
         [Authorize]
         public async Task<IActionResult> GetActiveWorkflowInChain(int parentWorkflowId)
@@ -262,22 +220,21 @@ namespace DynamicWorkflow.APIs.Controllers
                 instanceId = instance.Id,
                 workflowId = instance.Workflow.Id,
                 workflowName = instance.Workflow.Name,
-                instanceState = instance.State.ToString(),
+                workflowStatus = instance.WorkflowStatus.Name,
                 currentStepId = currentStep?.Id,
                 currentStepName = currentStep?.Name,
-                currentStepStatus = currentStep?.stepStatus.ToString(),
-                currentAssignedRole = currentStep?.AssignedRole.ToString(),
+                currentStepStatus = currentStep?.workflowStatus.Name,
+                currentAssignedRole = currentStep?.appRole.Name,
                 nextStepId = nextStep?.Id,
                 nextStepName = nextStep?.Name,
-                nextStepStatus = nextStep?.stepStatus.ToString(),
-                nextAssignedRole = nextStep?.AssignedRole.ToString(),
+                nextStepStatus = nextStep?.workflowStatus.Name,
+                nextAssignedRole = nextStep?.appRole.Name,
                 steps = instance.Workflow.Steps.Select(s => new
                 {
                     s.Id,
                     s.Name,
-                    Status = s.stepStatus.ToString(),
-                    InstanceState = s.stepStatus.ToString(),
-                    AssignedRole = s.AssignedRole.ToString()
+                    Status = s.workflowStatus.Name,
+                    AssignedRole = s.appRole.Name
                 })
             });
         }

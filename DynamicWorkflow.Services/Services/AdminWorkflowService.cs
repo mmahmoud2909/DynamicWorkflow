@@ -4,36 +4,59 @@ using DynamicWorkflow.Core.DTOs.Workflow;
 using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace DynamicWorkflow.Services.Services
 {
     public class AdminWorkflowService : IAdminWorkflowService
     {
         private readonly ApplicationIdentityDbContext _db;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AdminWorkflowService(ApplicationIdentityDbContext db) => _db = db;
+        public AdminWorkflowService(ApplicationIdentityDbContext db, IHttpContextAccessor httpContextAccessor)
+        {
+            _db = db;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private string GetCurrentUserId()
+        {
+            return _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? throw new UnauthorizedAccessException("User not authenticated");
+        }
 
         public async Task<List<WorkflowDto>> GetAllWorkflowsAsync()
         {
-            var list = await _db.Workflows
+            var workflows = await _db.Workflows
+                .Include(w => w.WorkflowStatus)
                 .Include(w => w.Steps)
-                .ThenInclude(s => s.InstanceSteps)
+                    .ThenInclude(s => s.workflowStatus)
+                .Include(w => w.Steps)
+                    .ThenInclude(s => s.actionTypeEntity)
+                .Include(w => w.Steps)
+                    .ThenInclude(s => s.appRole)
+                .OrderBy(w => w.Order)
                 .ToListAsync();
 
-            return list.Select(w => new WorkflowDto(
+            return workflows.Select(w => new WorkflowDto(
                 w.Id,
                 w.Name,
                 w.Description,
+                w.WorkflowStatusId,
+                w.WorkflowStatus?.Name,
+                w.Order,
                 w.Steps.Select(s => new WorkflowStepDto(
                     s.Id,
                     s.Name,
                     s.Comments,
-                    s.stepStatus,
-                    s.stepActionTypes,
+                    s.WorkflowStatusId,
+                    s.workflowStatus?.Name,
+                    s.ActionTypeEntityId,
+                    s.actionTypeEntity?.Name,
                     s.isEndStep,
-                    s.AssignedRole,
+                    s.AppRoleId,
+                    s.appRole?.Name,
                     s.WorkflowId
                 )).ToList()
             )).ToList();
@@ -41,47 +64,102 @@ namespace DynamicWorkflow.Services.Services
 
         public async Task<WorkflowDto?> GetWorkflowByIdAsync(int id)
         {
-            var w = await _db.Workflows.Include(x => x.Steps).FirstOrDefaultAsync(x => x.Id == id);
-            if (w == null) return null;
-            return new WorkflowDto(w.Id, w.Name, w.Description, w.Steps.Select(s => new WorkflowStepDto(s.Id, s.Name, s.Comments, s.stepStatus, s.stepActionTypes, s.isEndStep, s.AssignedRole, s.WorkflowId)).ToList());
+            var workflow = await _db.Workflows
+                .Include(w => w.WorkflowStatus)
+                .Include(w => w.Steps)
+                    .ThenInclude(s => s.workflowStatus)
+                .Include(w => w.Steps)
+                    .ThenInclude(s => s.actionTypeEntity)
+                .Include(w => w.Steps)
+                    .ThenInclude(s => s.appRole)
+                .FirstOrDefaultAsync(w => w.Id == id);
+
+            if (workflow == null) return null;
+
+            return new WorkflowDto(
+                workflow.Id,
+                workflow.Name,
+                workflow.Description,
+                workflow.WorkflowStatusId,
+                workflow.WorkflowStatus?.Name,
+                workflow.Order,
+                workflow.Steps.Select(s => new WorkflowStepDto(
+                    s.Id,
+                    s.Name,
+                    s.Comments,
+                    s.WorkflowStatusId,
+                    s.workflowStatus?.Name,
+                    s.ActionTypeEntityId,
+                    s.actionTypeEntity?.Name,
+                    s.isEndStep,
+                    s.AppRoleId,
+                    s.appRole?.Name,
+                    s.WorkflowId
+                )).ToList()
+            );
         }
 
         public async Task<int> CreateWorkflowAsync(CreateWorkflowDto dto)
         {
-            var w = new Workflow { Name = dto.Name, Description = dto.Description };
-            _db.Workflows.Add(w);
+            var userId = GetCurrentUserId();
+
+            var workflow = new Workflow
+            {
+                Name = dto.Name,
+                Description = dto.Description,
+                CreatedBy = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _db.Workflows.Add(workflow);
             await _db.SaveChangesAsync();
-            return w.Id;
+            return workflow.Id;
         }
 
         public async Task UpdateWorkflowAsync(int id, CreateWorkflowDto dto)
         {
-            var w = await _db.Workflows.FindAsync(id) ?? throw new KeyNotFoundException("Workflow not found");
-            w.Name = dto.Name;
-            w.Description = dto.Description;
+            var userId = GetCurrentUserId();
+            var workflow = await _db.Workflows.FindAsync(id)
+                ?? throw new KeyNotFoundException("Workflow not found");
+
+            workflow.Name = dto.Name;
+            workflow.Description = dto.Description;
+            workflow.UpdatedBy = userId;
+            workflow.UpdatedAt = DateTime.UtcNow;
+
             await _db.SaveChangesAsync();
         }
 
         public async Task DeleteWorkflowAsync(int id)
         {
-            var w = await _db.Workflows.FindAsync(id) ?? throw new KeyNotFoundException("Workflow not found");
-            _db.Workflows.Remove(w);
+            var workflow = await _db.Workflows.FindAsync(id)
+                ?? throw new KeyNotFoundException("Workflow not found");
+
+            _db.Workflows.Remove(workflow);
             await _db.SaveChangesAsync();
         }
 
-        // Steps
         public async Task<int> AddStepAsync(int workflowId, CreateStepDto dto)
         {
-            var wf = await _db.Workflows.FindAsync(workflowId) ?? throw new KeyNotFoundException("Workflow not found");
+            var userId = GetCurrentUserId();
+            var workflow = await _db.Workflows.FindAsync(workflowId)
+                ?? throw new KeyNotFoundException("Workflow not found");
+
             var step = new WorkflowStep
             {
-                Name = dto.stepName,
-                Comments = dto.comments,
-                stepActionTypes = dto.stepActionTypes,
-                isEndStep = dto.isEndStep,
-                AssignedRole = dto.assignedRole,
-                WorkflowId = workflowId
+                Name = dto.StepName,
+                Comments = dto.Comments,
+                ActionTypeEntityId = dto.ActionTypeEntityId,
+                WorkflowStatusId = dto.WorkflowStatusId,
+                isEndStep = dto.IsEndStep,
+                AppRoleId = dto.AppRoleId,
+                WorkflowId = workflowId,
+                Order = dto.Order,
+                PerformedBy = userId,
+                CreatedBy = userId,
+                CreatedAt = DateTime.UtcNow
             };
+
             _db.WorkflowSteps.Add(step);
             await _db.SaveChangesAsync();
             return step.Id;
@@ -89,54 +167,82 @@ namespace DynamicWorkflow.Services.Services
 
         public async Task UpdateStepAsync(int stepId, UpdateStepDto dto)
         {
-            var step = await _db.WorkflowSteps.FindAsync(stepId) ?? throw new KeyNotFoundException("Step not found");
-            if (dto.stepName is not null) step.Name = dto.stepName;
-            if (dto.comments is not null) step.Comments = dto.comments;
-            if (dto.assignedRole is not null) step.AssignedRole = dto.assignedRole.Value;
-            if (dto.isEndStep.HasValue) step.isEndStep = dto.isEndStep.Value;
-            if (dto.stepActionTypes.HasValue) step.stepActionTypes = dto.stepActionTypes.Value;
+            var userId = GetCurrentUserId();
+            var step = await _db.WorkflowSteps.FindAsync(stepId)
+                ?? throw new KeyNotFoundException("Step not found");
+
+            if (!string.IsNullOrEmpty(dto.StepName)) step.Name = dto.StepName;
+            if (dto.Comments != null) step.Comments = dto.Comments;
+            if (dto.AppRoleId.HasValue) step.AppRoleId = dto.AppRoleId.Value;
+            if (dto.IsEndStep.HasValue) step.isEndStep = dto.IsEndStep.Value;
+            if (dto.ActionTypeEntityId.HasValue) step.ActionTypeEntityId = dto.ActionTypeEntityId.Value;
+            if (dto.WorkflowStatusId.HasValue) step.WorkflowStatusId = dto.WorkflowStatusId.Value;
+            if (dto.Order.HasValue) step.Order = dto.Order.Value;
+
+            step.PerformedBy = userId;
+            step.UpdatedBy = userId;
+            step.UpdatedAt = DateTime.UtcNow;
+
             await _db.SaveChangesAsync();
         }
 
         public async Task DeleteStepAsync(int stepId)
         {
-            var step = await _db.WorkflowSteps.FindAsync(stepId) ?? throw new KeyNotFoundException("Step not found");
-            // optionally check for Instance steps or transitions referencing this step
-            var referencing = await _db.WorkflowTransitions.AnyAsync(t => t.FromStepId == stepId || t.ToStepId == stepId);
-            if (referencing) throw new InvalidOperationException("Step used by transitions - remove transitions first.");
+            var step = await _db.WorkflowSteps.FindAsync(stepId)
+                ?? throw new KeyNotFoundException("Step not found");
+
+            var hasTransitions = await _db.WorkflowTransitions
+                .AnyAsync(t => t.FromStepId == stepId || t.ToStepId == stepId);
+
+            if (hasTransitions)
+                throw new InvalidOperationException("Step used by transitions - remove transitions first.");
+
             _db.WorkflowSteps.Remove(step);
             await _db.SaveChangesAsync();
         }
 
-        // Transitions
         public async Task<int> AddTransitionAsync(int workflowId, CreateTransitionDto dto)
         {
-            // ensure steps exist and belong to workflowId
-            var from = await _db.WorkflowSteps.FindAsync(dto.FromStepId) ?? throw new KeyNotFoundException("From step not found");
-            var to = await _db.WorkflowSteps.FindAsync(dto.ToStepId) ?? throw new KeyNotFoundException("To step not found");
-            if (from.WorkflowId != workflowId || to.WorkflowId != workflowId) throw new InvalidOperationException("Steps must belong to same workflow.");
+            var userId = GetCurrentUserId();
 
-            var t = new WorkflowTransition
+            var fromStep = await _db.WorkflowSteps.FindAsync(dto.FromStepId)
+                ?? throw new KeyNotFoundException("From step not found");
+
+            WorkflowStep toStep = null;
+            if (dto.ToStepId.HasValue)
+            {
+                toStep = await _db.WorkflowSteps.FindAsync(dto.ToStepId.Value)
+                    ?? throw new KeyNotFoundException("To step not found");
+            }
+
+            if (fromStep.WorkflowId != workflowId || (toStep != null && toStep.WorkflowId != workflowId))
+                throw new InvalidOperationException("Steps must belong to same workflow.");
+
+            var transition = new WorkflowTransition
             {
                 FromStepId = dto.FromStepId,
                 ToStepId = dto.ToStepId,
                 WorkflowId = workflowId,
-                Action = dto.Action,
-                ActionTypeEntityId = (int)dto.Action,
-                FromState = dto.FromState,
-                ToState = dto.ToState,
+                ActionTypeEntityId = dto.ActionTypeEntityId,
+                FromStatusId = dto.FromStatusId,
+                ToStatusId = dto.ToStatusId,
                 Timestamp = DateTime.UtcNow,
-                PerformedBy = "system" // admin-created; runtime transitions will set real user
+                PerformedBy = userId,
+                CreatedBy = userId,
+                CreatedAt = DateTime.UtcNow
             };
-            _db.WorkflowTransitions.Add(t);
+
+            _db.WorkflowTransitions.Add(transition);
             await _db.SaveChangesAsync();
-            return t.Id;
+            return transition.Id;
         }
 
         public async Task DeleteTransitionAsync(int transitionId)
         {
-            var t = await _db.WorkflowTransitions.FindAsync(transitionId) ?? throw new KeyNotFoundException("Transition not found");
-            _db.WorkflowTransitions.Remove(t);
+            var transition = await _db.WorkflowTransitions.FindAsync(transitionId)
+                ?? throw new KeyNotFoundException("Transition not found");
+
+            _db.WorkflowTransitions.Remove(transition);
             await _db.SaveChangesAsync();
         }
     }

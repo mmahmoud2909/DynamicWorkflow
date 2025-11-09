@@ -2,13 +2,7 @@
 {
     public class UserDto
     {
-        private string v1;
-        private string v2;
-        private Guid? managerId;
-
-        public UserDto()
-        {
-        }
+        public UserDto() { }
         public Guid Id { get; set; } 
         public string UserName { get; set; }
         public string Email { get; set; }
@@ -36,7 +30,5 @@
             RegisteredAt = registeredAt;
             ProfilePicUrl = profilePicUrl;
         }
-
-
     }
 }

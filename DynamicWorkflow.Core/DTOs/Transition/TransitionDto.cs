@@ -1,4 +1,4 @@
-﻿using DynamicWorkflow.Core.Enums;
+﻿using DynamicWorkflow.Core.Entities;
 
 namespace DynamicWorkflow.Core.DTOs.Transition
 {
@@ -9,8 +9,8 @@ namespace DynamicWorkflow.Core.DTOs.Transition
         public string PerformedBy { get; set; }
         public int FromStepId { get; set; }
         public int ToStepId { get; set; }
-        public ActionType Action { get; set; }
-        public Status FromState { get; set; }
-        public Status ToState { get; set; }
+        public ActionTypeEntity Action { get; set; }
+        public WorkflowStatus FromState { get; set; }
+        public WorkflowStatus ToState { get; set; }
     }
 }

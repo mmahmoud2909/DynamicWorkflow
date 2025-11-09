@@ -1,5 +1,5 @@
 ﻿using DynamicWorkflow.Core.Entities;
-using DynamicWorkflow.Core.Enums;
+using DynamicWorkflow.Core.Entities.Users;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -37,25 +37,24 @@ namespace DynamicWorkflow.Infrastructure.Data
             await _db.SaveChangesAsync();
         }
 
-        //public static Workflow GetWorkflow()
-        //{
-        //    if (_workflow != null) return _workflow;
+        public Task MakeActionAsync(Workflow workflow, int stepId, int actionTypeEntityId, ApplicationUser currentUser)
+        {
+            throw new NotImplementedException();
+        }
 
-        //    _workflow = new Workflow
-        //    {
-        //        Id = 1,
-        //        Name = "Vacation Request Workflow",
-        //        Description = "Vacation requested due to Gradution Party for class 2025",
-        //        Steps = new List<WorkflowStep>
-        //        {
-        //        new WorkflowStep { Id = 1, Name = "Vacation Request", stepActionTypes = ActionType.Create, stepStatus = Status.InProgress },
-        //        new WorkflowStep { Id = 2, Name = "N+1 Approval", stepActionTypes = ActionType.Hold, stepStatus = Status.ONHold  },
-        //        new WorkflowStep { Id = 3, Name = "Manager Approval", stepActionTypes = ActionType.Skip, stepStatus = Status.Skipped  },
-        //        new WorkflowStep { Id = 4, Name = "HR Validation", stepActionTypes = ActionType.Reject, stepStatus = Status.Rejected}
-        //        }
-        //    };
+        public Task<List<WorkflowStep>> GetAllStepsAsync(int workflowId)
+        {
+            throw new NotImplementedException();
+        }
 
-        //    return _workflow;
-        //}
+        public Task<WorkflowStep?> GetStepByIdAsync(int stepId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> CanUserPerformStepAsync(int stepId, ApplicationUser user)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

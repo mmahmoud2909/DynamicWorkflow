@@ -10,7 +10,6 @@ namespace DynamicWorkflow.Infrastructure.Identity
     {
         public ApplicationIdentityDbContext(DbContextOptions<ApplicationIdentityDbContext> options) : base(options)
         {
-            //_options = options;
         }
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -25,8 +24,6 @@ namespace DynamicWorkflow.Infrastructure.Identity
         public DbSet<WorkFlowInstanceStep> WorkFlowInstanceSteps { get; set; }
         public DbSet<WorkflowTransition>WorkflowTransitions { get; set; }
         public DbSet<Department> Departments { get; set; }
-        public DbSet<StepRole> StepRoles { get; set; }
-        public DbSet<WorkflowInstanceAction> WorkflowInstancesAction { get; set; }
         public DbSet<AppRole> AppRoles { get; set; }
         public DbSet<ActionTypeEntity> ActionTypes { get; set; }
         public DbSet<WorkflowStatus> WorkflowStatuses { get; set; }

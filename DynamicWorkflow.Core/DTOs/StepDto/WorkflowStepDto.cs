@@ -1,33 +1,33 @@
-﻿using DynamicWorkflow.Core.Entities.Users;
-using DynamicWorkflow.Core.Enums;
-
-namespace DynamicWorkflow.Core.DTOs.StepDto
+﻿namespace DynamicWorkflow.Core.DTOs.StepDto
 {
     public class WorkflowStepDto
     {
-        private Status stepStatus1;
-        private ActionType stepActionTypes1;
-        private Roles assignedRole;
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string? Comments { get; set; }
+        public int WorkflowStatusId { get; set; }
+        public string? WorkflowStatus { get; set; }
+        public int ActionTypeEntityId { get; set; }
+        public string? ActionType { get; set; }
+        public bool IsEndStep { get; set; }
+        public int AppRoleId { get; set; }
+        public string? AppRole { get; set; }
+        public int WorkflowId { get; set; }
 
-        public WorkflowStepDto(int id, string stepName, string? comments, Status stepStatus1, ActionType stepActionTypes1, bool isEndStep, Roles assignedRole, int workflowId)
+        public WorkflowStepDto(int id, string name, string? comments, int workflowStatusId, string? workflowStatus,
+            int actionTypeEntityId, string? actionType, bool isEndStep, int appRoleId, string? appRole, int workflowId)
         {
             Id = id;
-            this.stepName = stepName;
-            this.comments = comments;
-            this.stepStatus1 = stepStatus1;
-            this.stepActionTypes1 = stepActionTypes1;
-            this.isEndStep = isEndStep;
-            this.assignedRole = assignedRole;
+            Name = name;
+            Comments = comments;
+            WorkflowStatusId = workflowStatusId;
+            WorkflowStatus = workflowStatus;
+            ActionTypeEntityId = actionTypeEntityId;
+            ActionType = actionType;
+            IsEndStep = isEndStep;
+            AppRoleId = appRoleId;
+            AppRole = appRole;
             WorkflowId = workflowId;
         }
-
-        public int Id { get; set; }
-        public string stepName { get; set; }
-        public string? comments { get; set; }
-        public Status stepStatus { get; set; }
-        public ActionType stepActionTypes { get; set; }
-        public bool isEndStep { get; set; }
-        public Roles AssignedRole { get; set; }
-        public int WorkflowId { get; set; }
     }
 }

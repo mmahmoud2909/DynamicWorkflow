@@ -1,11 +1,6 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DynamicWorkflow.Infrastructure.Data.Configurations
 {
@@ -20,7 +15,7 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.Property(s => s.Name)
                    .IsRequired()
                    .HasMaxLength(100);
-            builder.HasMany(wfa=>wfa.WorkflowInstanceActions).WithOne(e=>e.workflowStatus).HasForeignKey(e=>e.WorkflowStatusId).OnDelete(DeleteBehavior.NoAction);
+            //builder.HasMany(wfa=>wfa.WorkflowInstanceActions).WithOne(e=>e.workflowStatus).HasForeignKey(e=>e.WorkflowStatusId).OnDelete(DeleteBehavior.NoAction);
 
         }
     }

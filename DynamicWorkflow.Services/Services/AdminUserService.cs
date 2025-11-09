@@ -3,7 +3,6 @@ using DynamicWorkflow.Core.DTOs.Department;
 using DynamicWorkflow.Core.DTOs.User;
 using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
-using DynamicWorkflow.Core.Enums;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -30,7 +29,6 @@ namespace DynamicWorkflow.Services.Services
             _mapper = mapper;
         }
 
-        // ✅ Get all users
         public async Task<List<UserDto>> GetAllUsersAsync()
         {
             var users = await _userManager.Users
@@ -44,7 +42,6 @@ namespace DynamicWorkflow.Services.Services
             )).ToList();
         }
 
-        // ✅ Get user by ID
         public async Task<UserDto?> GetUserByIdAsync(Guid id)
         {
             var u = await _userManager.Users
@@ -60,17 +57,13 @@ namespace DynamicWorkflow.Services.Services
             );
         }
 
-        // ✅ Create user + assign Role from Enum
         public async Task<UserDto> CreateUserAsync(CreateUserDto dto)
         {
-            // Validate department
             var dept = await _db.Departments.FindAsync(dto.DepartmentId);
             if (dept == null) throw new KeyNotFoundException("Department not found");
 
-            // Convert enum to string role name
-            var roleName = dto.Role.ToString();
+            var roleName = dto.Role.Name.ToString();
 
-            // Ensure role exists in database
             if (!await _roleManager.RoleExistsAsync(roleName))
             {
                 var newRole = new ApplicationRole { Name = roleName };
@@ -79,7 +72,6 @@ namespace DynamicWorkflow.Services.Services
                     throw new InvalidOperationException($"Failed to create role '{roleName}'.");
             }
 
-            // Create user
             var user = new ApplicationUser
             {
                 Id = Guid.NewGuid(),
@@ -96,7 +88,6 @@ namespace DynamicWorkflow.Services.Services
             if (!result.Succeeded)
                 throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
 
-            // Assign role
             var assignResult = await _userManager.AddToRoleAsync(user, roleName);
             if (!assignResult.Succeeded)
                 throw new InvalidOperationException($"Failed to assign role '{roleName}' to user '{user.UserName}'.");
@@ -109,7 +100,6 @@ namespace DynamicWorkflow.Services.Services
             );
         }
 
-        // ✅ Update user
         public async Task UpdateUserAsync(Guid id, UpdateUserDto dto)
         {
             var user = await _userManager.FindByIdAsync(id.ToString())
@@ -130,7 +120,6 @@ namespace DynamicWorkflow.Services.Services
                 throw new InvalidOperationException(string.Join("; ", res.Errors.Select(e => e.Description)));
         }
 
-        // ✅ Delete user
         public async Task DeleteUserAsync(Guid id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString())
@@ -141,7 +130,6 @@ namespace DynamicWorkflow.Services.Services
                 throw new InvalidOperationException(string.Join("; ", res.Errors.Select(e => e.Description)));
         }
 
-        // ✅ Departments CRUD
         public async Task<List<DepartmentDto>> GetDepartmentsAsync()
         {
             return await _db.Departments
@@ -165,7 +153,6 @@ namespace DynamicWorkflow.Services.Services
             dept.Name = dto.Name;
             await _db.SaveChangesAsync();
         }
-
         public async Task DeleteDepartmentAsync(Guid id)
         {
             var dept = await _db.Departments.FindAsync(id)

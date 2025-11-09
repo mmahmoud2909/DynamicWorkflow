@@ -1,5 +1,4 @@
-﻿
-namespace DynamicWorkflow.Core.Entities
+﻿namespace DynamicWorkflow.Core.Entities
 {
     public class DocumentRequirement : BaseEntity
     {

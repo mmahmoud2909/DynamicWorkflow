@@ -3,7 +3,6 @@ using DynamicWorkflow.Core.DTOs.Transition;
 using DynamicWorkflow.Core.DTOs.Workflow;
 using DynamicWorkflow.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DynamicWorkflow.APIs.Controllers
@@ -47,7 +46,6 @@ namespace DynamicWorkflow.APIs.Controllers
             return NoContent();
         }
 
-        // Steps
         [HttpPost("AddStep/{workflowId:int}")]
         public async Task<IActionResult> AddStep(int workflowId, [FromBody] CreateStepDto dto)
         {
@@ -69,7 +67,6 @@ namespace DynamicWorkflow.APIs.Controllers
             return NoContent();
         }
 
-        // Transitions
         [HttpPost("AddTransition/{workflowId:int}")]
         public async Task<IActionResult> AddTransition(int workflowId, [FromBody] CreateTransitionDto dto)
         {

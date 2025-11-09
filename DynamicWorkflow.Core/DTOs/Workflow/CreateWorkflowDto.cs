@@ -6,6 +6,7 @@ namespace DynamicWorkflow.Core.DTOs.Workflow
     {
         public string Name { get; set; }
         public string Description { get; set; }
-        public List<WorkflowStepDto> Steps { get; set; }
+        public int WorkflowStatusId { get; set; }
+        public int Order { get; set; }
     }
 }

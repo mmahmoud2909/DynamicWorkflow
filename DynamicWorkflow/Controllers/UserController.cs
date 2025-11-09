@@ -2,7 +2,6 @@
 using DynamicWorkflow.Core.DTOs.User;
 using DynamicWorkflow.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DynamicWorkflow.APIs.Controllers
@@ -12,7 +11,6 @@ namespace DynamicWorkflow.APIs.Controllers
         [Authorize(Roles = "User")]
         public class UserController(IUserService _userService, IMapper _mapper) : ApiController
         {
-            // GET: api/user/myProfile
             [HttpGet("myProfile")]
             public async Task<IActionResult> GetCurrentUserInfo()
             {
@@ -21,7 +19,6 @@ namespace DynamicWorkflow.APIs.Controllers
                 return Ok(userInfo);
             }
 
-            // PUT: api/user/editMyProfile
             [HttpPut("editMyProfile")]
             public async Task<IActionResult> EditUserInfo([FromForm] EditUserDto model)
             {
@@ -33,5 +30,4 @@ namespace DynamicWorkflow.APIs.Controllers
             }
         }
     }
-
 }

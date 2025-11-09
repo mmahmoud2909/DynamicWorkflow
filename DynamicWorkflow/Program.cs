@@ -1,9 +1,5 @@
 ﻿using DynamicWorkflow.APIs.Extenstions;
-using DynamicWorkflow.Core.Entities;
-using DynamicWorkflow.Infrastructure.DataSeeding;
-using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
@@ -26,9 +22,6 @@ namespace DynamicWorkflow.APIs
     });
 
             builder.Services.AddEndpointsApiExplorer();
-
-            //// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            //builder.Services.AddOpenApi();
 
             builder.Services.AddSwaggerGen(c =>
             {
@@ -62,39 +55,6 @@ namespace DynamicWorkflow.APIs
 
             var app = builder.Build();
 
-            //Data Seeding Scope
-            using (var scope = app.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                var context = services.GetRequiredService<ApplicationIdentityDbContext>();
-
-                await UsersAndRolesSeedData.SeedAsync(services);
-
-                await ApplicationdbcontextSeed.SeedDataAsync(services);
-
-                if (!context.WorkflowStatuses.Any())
-                {
-                    context.WorkflowStatuses.AddRange(
-                        new WorkflowStatus { Name = "Pending" },
-                        new WorkflowStatus { Name = "InProgress" },
-                        new WorkflowStatus { Name = "Completed" },
-                        new WorkflowStatus { Name = "Rejected" }
-                    );
-                    await context.SaveChangesAsync();
-                }
-                // 3️⃣ Now safely seed workflows
-                var pendingStatus = await context.WorkflowStatuses.FirstAsync(s => s.Name == "Pending");
-
-                var serviceRepairWorkflows = ServiceRepairWorkflowSeedData.GetWorkflows();
-                foreach (var wf in serviceRepairWorkflows)
-                {
-                    wf.WorkflowStatusId = pendingStatus.Id; // ✅ assign existing FK
-                }
-                context.Workflows.AddRange(serviceRepairWorkflows);
-                await context.SaveChangesAsync();
-            }
-
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -132,7 +92,6 @@ namespace DynamicWorkflow.APIs
             var webRootPath = app.Environment.WebRootPath;
             if (string.IsNullOrEmpty(webRootPath))
             {
-                // Fallback to default wwwroot path
                 webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
             }
 
@@ -150,8 +109,6 @@ namespace DynamicWorkflow.APIs
                 RequestPath = "/uploads"
             });
           
-            //WorkflowSeedData.GetWorkflows();
-            app.SeedWorkflowData();
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
@@ -164,4 +121,3 @@ namespace DynamicWorkflow.APIs
         }
     }
 }
-

@@ -46,7 +46,6 @@ namespace DynamicWorkflow.Services.Services
             return result;
         }
 
-
         public async Task<List<UserDto>> GetAllUsersAsync()
         {
             _logger.LogInfo(nameof(UserService), "GetAllUsersAsync called");
@@ -63,7 +62,6 @@ namespace DynamicWorkflow.Services.Services
             }
         }
 
-
         public async Task<IdentityResult> RequestAccountDeletionAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
@@ -75,8 +73,6 @@ namespace DynamicWorkflow.Services.Services
 
             return await _userManager.UpdateAsync(user);
         }
-
-
         private UserDto MapUserToDto(ApplicationUser user)
         {
             return new()

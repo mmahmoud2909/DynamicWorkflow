@@ -29,16 +29,11 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<StepService>();
             services.AddScoped<IAccountService, AccountService>();
-            services.AddScoped<IStateMachineFactory, StateMachineFactory>();
             services.AddScoped<IWorkflowService, WorkflowService>();
             services.AddScoped<IWorkflow, WorkflowRepository>();
             services.AddScoped<IAdminUserService, AdminUserService>();
             services.AddScoped<IAdminWorkflowService, AdminWorkflowService>();
-            //services.AddScoped<IworkflowInstanceService, WorkflowInstanceServices>();
 
-
-            // This automatically scans for and registers all Profile classes
-            // Or register specific profiles
             services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<Core.Mapping.MappingProfile>();
@@ -54,18 +49,8 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddDbContext<ApplicationIdentityDbContext>(options =>
              options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging(), ServiceLifetime.Scoped);
             services.AddIdentity<ApplicationUser, ApplicationRole>().AddEntityFrameworkStores<ApplicationIdentityDbContext>().AddDefaultTokenProviders();
-            //services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-            //{
-            //    options.Password.RequireDigit = true;
-            //    options.Password.RequiredLength = 6;
-            //    options.Password.RequireNonAlphanumeric = false;
-            //    options.Password.RequireUppercase = true;
-            //    options.Password.RequireLowercase = false;
-            //})
-            //        .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
-
             services.AddHttpClient();
-            var tokenSection = configuration.GetSection("Token");//
+            var tokenSection = configuration.GetSection("Token");
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

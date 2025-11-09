@@ -7,14 +7,20 @@ namespace DynamicWorkflow.Core.DTOs.Workflow
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        List<WorkflowStepDto> Steps { get; set; } = new List<WorkflowStepDto>();
+        public int? WorkflowStatusId { get; set; }
+        public string? WorkflowStatus { get; set; }
+        public int? Order { get; set; }
+        public List<WorkflowStepDto> Steps { get; set; }
 
-        public WorkflowDto(int id, string name, string description, List<WorkflowStepDto> steps)
+        public WorkflowDto(int id, string name, string description, int? workflowStatusId, string? workflowStatus, int? order, List<WorkflowStepDto> steps)
         {
-            this.Id = id;
+            Id = id;
             Name = name;
             Description = description;
-            this.Steps = steps;
+            WorkflowStatusId = workflowStatusId;
+            WorkflowStatus = workflowStatus;
+            Order = order;
+            Steps = steps;
         }
     }
 }

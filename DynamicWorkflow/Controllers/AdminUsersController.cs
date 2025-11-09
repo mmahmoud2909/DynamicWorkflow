@@ -14,7 +14,6 @@ namespace DynamicWorkflow.APIs.Controllers
         private readonly IAdminUserService _svc;
         public AdminUsersController(IAdminUserService svc) => _svc = svc;
 
-        // ✅ Get all users (with department + role info)
         [HttpGet("GetAllUsers")]
         public async Task<IActionResult> GetAll()
         {
@@ -31,7 +30,6 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        // ✅ Get user by ID (detailed)
         [HttpGet("GetUserbyId/{id:guid}")]
         public async Task<IActionResult> Get(Guid id)
         {
@@ -46,7 +44,6 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        // ✅ Create user and return full info
         [HttpPost("CreateUser")]
         public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
         {
@@ -73,7 +70,6 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        // ✅ Update user with response info
         [HttpPut("UpdateUser/{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserDto dto)
         {
@@ -86,7 +82,6 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        // ✅ Delete user
         [HttpDelete("DeleteUser/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -94,7 +89,6 @@ namespace DynamicWorkflow.APIs.Controllers
             return Ok(new { message = $"🗑️ User with ID {id} deleted successfully." });
         }
 
-        // ✅ Departments CRUD endpoints with nice Swagger responses
         [HttpGet("GetAllDepartments")]
         public async Task<IActionResult> GetDepartments()
         {

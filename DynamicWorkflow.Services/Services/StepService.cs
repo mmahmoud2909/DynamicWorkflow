@@ -1,13 +1,12 @@
 ﻿using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
-using DynamicWorkflow.Core.Enums;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DynamicWorkflow.Services.Services
 {
-    public class StepService : IWorkflow
+    public class StepService : IWorkflow, IStepService
     {
         private readonly ApplicationIdentityDbContext _context;
 
@@ -15,84 +14,65 @@ namespace DynamicWorkflow.Services.Services
         {
             _context = context;
         }
-
-        /// <summary>
-        /// Executes an action on a workflow step — restricted by role.😒
-        /// </summary>
-        public async Task MakeActionAsync(Workflow workflow, int stepId, ActionType action, ApplicationUser currentUser)
+        public async Task MakeActionAsync(Workflow workflow, int stepId, int actionTypeEntityId, ApplicationUser currentUser)
         {
             var step = workflow.Steps.FirstOrDefault(s => s.Id == stepId);
             if (step == null)
                 throw new Exception($"Step with ID {stepId} not found.");
 
-            // ✔ Get user roles (proper way using join)
-            var userRoles = await (from ur in _context.UserRoles
-                                   join r in _context.Roles on ur.RoleId equals r.Id
-                                   where ur.UserId == currentUser.Id
-                                   select r.Name).ToListAsync();
+            var actionTypeEntity = await _context.ActionTypes.FindAsync(actionTypeEntityId);
+            if (actionTypeEntity == null)
+                throw new Exception($"Action type with ID {actionTypeEntityId} not found.");
+            
+            if (!await CanUserPerformStepAsync(stepId, currentUser))
+                throw new UnauthorizedAccessException($"User is not authorized to perform this step.");
 
-            var requiredRole = step.AssignedRole.ToString();
+            step.PerformedBy = currentUser.Id.ToString();
+            step.UpdatedBy = currentUser.Id.ToString();
+            step.UpdatedAt = DateTime.UtcNow;
 
-            // ✅ Authorization check
-            if (!userRoles.Contains(requiredRole) && !userRoles.Contains("Admin"))
-                throw new UnauthorizedAccessException($"Only role '{requiredRole}' can perform this step.");
+            var nextStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault(s => s.Order > step.Order);
 
-            // ✅ Update step status
-            switch (action)
-            {
-                case ActionType.Accept:
-                    step.stepStatus = Status.Accepted;
-                    break;
-                case ActionType.Reject:
-                    step.stepStatus = Status.Rejected;
-                    break;
-                default:
-                    step.stepStatus = Status.InProgress;
-                    break;
-            }
-
-            // ✅ Create transition log
             var transition = new WorkflowTransition
             {
                 WorkflowId = workflow.Id,
                 FromStepId = step.Id,
-                ToStepId = (int)(workflow.Steps.OrderBy(s => s.Order).FirstOrDefault(s => s.Order > step.Order)?.Id),
-                Action = action,
-                ActionTypeEntityId = (int)action,
-                FromState = step.stepStatus,
-                ToState = Status.Pending,
+                ToStepId = nextStep?.Id,
+                ActionTypeEntityId = actionTypeEntityId,
+                FromStatusId = step.WorkflowStatusId,
+                ToStatusId = nextStep?.WorkflowStatusId,
                 Timestamp = DateTime.UtcNow,
-                PerformedBy = $"{currentUser.DisplayName} ({string.Join(',', userRoles)})"
+                PerformedBy = currentUser.Id.ToString(),
+                CreatedBy = currentUser.Id.ToString(),
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.WorkflowTransitions.Add(transition);
 
-            // ✅ Move next step to Pending
-            var nextStep = workflow.Steps.OrderBy(s => s.Order).FirstOrDefault(s => s.Order > step.Order);
-            if (nextStep != null)
+            if (nextStep == null)
             {
-                nextStep.stepStatus = Status.Pending;
+                var completedStatus = await _context.WorkflowStatuses
+                    .FirstOrDefaultAsync(ws => ws.Name == "Completed");
+                if (completedStatus != null)
+                {
+                    workflow.WorkflowStatusId = completedStatus.Id;
+                    workflow.UpdatedBy = currentUser.Id.ToString();
+                    workflow.UpdatedAt = DateTime.UtcNow;
+                }
             }
-            else
-            {
-                workflow.Status = Status.Completed;
-            }
+
             await _context.SaveChangesAsync();
         }
-        //public Task GetAllSteps(int id)
-        //{
-        //    var wf = _AdminWorkflowService.GetWorkflowByIdAsync(id);
-        //    var result = wf..Steps;
-        //    return (Task)result;
-        //}
 
-        /// <summary>
-        /// Returns all steps of a workflow.
-        /// </summary>
         public async Task<List<WorkflowStep>> GetAllStepsAsync(int workflowId)
         {
             var workflow = await _context.Workflows
                 .Include(w => w.Steps)
+                    .ThenInclude(s => s.workflowStatus)
+                .Include(w => w.Steps)
+                    .ThenInclude(s => s.actionTypeEntity)
+                .Include(w => w.Steps)
+                    .ThenInclude(s => s.appRole)
                 .FirstOrDefaultAsync(w => w.Id == workflowId);
 
             if (workflow == null)
@@ -101,10 +81,92 @@ namespace DynamicWorkflow.Services.Services
             return workflow.Steps.OrderBy(s => s.Order).ToList();
         }
 
-        // Interface placeholders (future implementation)
-        public Task<WorkflowInstance?> GetByIdAsync(int id) => throw new NotImplementedException();
-        public Task SaveAsync(WorkflowInstance instance) => throw new NotImplementedException();
-        public Task AddAsync(WorkflowInstance instance) => throw new NotImplementedException();
-        public Task UpdateAsync(WorkflowInstance instance) => throw new NotImplementedException();
+        public async Task<WorkflowStep?> GetStepByIdAsync(int stepId)
+        {
+            return await _context.WorkflowSteps
+                .Include(s => s.workflowStatus)
+                .Include(s => s.actionTypeEntity)
+                .Include(s => s.appRole)
+                .Include(s => s.workflow)
+                .FirstOrDefaultAsync(s => s.Id == stepId);
+        }
+        
+        public async Task<bool> CanUserPerformStepAsync(int stepId, ApplicationUser user)
+        {
+            var step = await _context.WorkflowSteps
+                .Include(s => s.appRole)
+                .FirstOrDefaultAsync(s => s.Id == stepId);
+
+            if (step == null)
+                return false;
+
+            var userRoles = await (from ur in _context.UserRoles
+                                   join r in _context.Roles on ur.RoleId equals r.Id
+                                   where ur.UserId == user.Id
+                                   select r.Name).ToListAsync();
+
+            var requiredRole = step.appRole?.Name;
+            if (requiredRole != null && (userRoles.Contains(requiredRole) || userRoles.Contains("Admin")))
+                return true;
+
+            if (step.AssignedUserId.HasValue && step.AssignedUserId.Value == user.Id)
+                return true;
+
+            return false;
+        }
+
+        public async Task<WorkflowStep> CreateStepAsync(WorkflowStep step, string userId)
+        {
+            step.CreatedBy = userId;
+            step.CreatedAt = DateTime.UtcNow;
+
+            _context.WorkflowSteps.Add(step);
+            await _context.SaveChangesAsync();
+
+            return step;
+        }
+
+        public async Task UpdateStepAsync(WorkflowStep step, string userId)
+        {
+            step.UpdatedBy = userId;
+            step.UpdatedAt = DateTime.UtcNow;
+
+            _context.WorkflowSteps.Update(step);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<WorkflowInstance?> GetByIdAsync(int id)
+        {
+            return await _context.WorkflowInstances
+                .Include(i => i.Workflow)
+                .Include(i => i.CurrentStep)
+                .Include(i => i.Transitions)
+                .Include(i => i.WorkflowStatus)
+                .FirstOrDefaultAsync(i => i.Id == id);
+        }
+
+        public async Task SaveAsync(WorkflowInstance instance)
+        {
+            if (instance.Id == 0)
+            {
+                await AddAsync(instance);
+            }
+            else
+            {
+                await UpdateAsync(instance);
+            }
+        }
+
+        public async Task AddAsync(WorkflowInstance instance)
+        {
+            _context.WorkflowInstances.Add(instance);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(WorkflowInstance instance)
+        {
+            _context.WorkflowInstances.Update(instance);
+            await _context.SaveChangesAsync();
+        }
     }
 }

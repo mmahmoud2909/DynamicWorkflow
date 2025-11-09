@@ -7,8 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Background Services\**" />
     <Compile Remove="DTOs\**" />
+    <EmbeddedResource Remove="Background Services\**" />
     <EmbeddedResource Remove="DTOs\**" />
+    <None Remove="Background Services\**" />
     <None Remove="DTOs\**" />
   </ItemGroup>
 
@@ -20,10 +23,6 @@
   <ItemGroup>
     <ProjectReference Include="..\DynamicWorkflow.Core\DynamicWorkflow.Core.csproj" />
     <ProjectReference Include="..\DynamicWorkflow.Infrastructure\DynamicWorkflow.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Background Services\" />
   </ItemGroup>
 
 </Project>
