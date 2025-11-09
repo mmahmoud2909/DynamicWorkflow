@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using DynamicWorkflow.Infrastructure.DataSeeding;
 
 namespace DynamicWorkflow.APIs.Extenstions
 {
@@ -44,6 +45,7 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddCors();
             return services;
         }
+        
         public static IServiceCollection AddAuthServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddDbContext<ApplicationIdentityDbContext>(options =>

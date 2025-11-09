@@ -67,19 +67,19 @@ namespace DynamicWorkflow.APIs.Controllers
             return NoContent();
         }
 
-        [HttpPost("AddTransition/{workflowId:int}")]
-        public async Task<IActionResult> AddTransition(int workflowId, [FromBody] CreateTransitionDto dto)
-        {
-            var id = await _svc.AddTransitionAsync(workflowId, dto);
-            return CreatedAtAction(nameof(Get), new { id = workflowId }, new { transitionId = id });
-        }
+        //[HttpPost("AddTransition/{workflowId:int}")]
+        //public async Task<IActionResult> AddTransition(int workflowId, [FromBody] CreateTransitionDto dto)
+        //{
+        //    var id = await _svc.AddTransitionAsync(workflowId, dto);
+        //    return CreatedAtAction(nameof(Get), new { id = workflowId }, new { transitionId = id });
+        //}
 
-        [HttpDelete("DeleteTransition/{id:int}")]
-        public async Task<IActionResult> DeleteTransition(int id)
-        {
-            await _svc.DeleteTransitionAsync(id);
-            return NoContent();
-        }
+        //[HttpDelete("DeleteTransition/{id:int}")]
+        //public async Task<IActionResult> DeleteTransition(int id)
+        //{
+        //    await _svc.DeleteTransitionAsync(id);
+        //    return NoContent();
+        //}
     }
 
 }

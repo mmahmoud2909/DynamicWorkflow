@@ -1,4 +1,5 @@
 ﻿using DynamicWorkflow.APIs.Extenstions;
+using DynamicWorkflow.Infrastructure.DataSeeding;
 using DynamicWorkflow.Services.Services;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
@@ -54,6 +55,8 @@ namespace DynamicWorkflow.APIs
 
 
             var app = builder.Build();
+
+            app.SeedData();
 
             if (app.Environment.IsDevelopment())
             {

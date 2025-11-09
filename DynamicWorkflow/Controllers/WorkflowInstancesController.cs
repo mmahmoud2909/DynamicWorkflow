@@ -31,7 +31,10 @@ namespace DynamicWorkflow.APIs.Controllers
 
             var instance = await _instanceService.CreateInstanceAsync(workflowId, user);
 
-            var orderedSteps = instance.Workflow.Steps.OrderBy(s => s.Order).ToList();
+            if (instance == null)
+                return BadRequest("Failed to create workflow instance");
+
+            var orderedSteps = instance.Workflow?.Steps?.OrderBy(s => s.Order).ToList();
             var nextStep = orderedSteps.SkipWhile(s => s.Id != instance.CurrentStepId).Skip(1).FirstOrDefault();
 
             return Ok(new
@@ -200,43 +203,44 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        [HttpGet("chain/{parentWorkflowId}/active")]
-        [Authorize]
-        public async Task<IActionResult> GetActiveWorkflowInChain(int parentWorkflowId)
-        {
-            var instance = await _instanceService.GetActiveInstanceInChainAsync(parentWorkflowId);
-            if (instance == null)
-                return NotFound("No active workflow found in chain.");
+        //[HttpGet("chain/{parentWorkflowId}/active")]
+        //[Authorize]
+        //public async Task<IActionResult> GetActiveWorkflowInChain(int parentWorkflowId)
+        //{
+        //    var instance = await _instanceService.GetActiveInstanceInChainAsync(parentWorkflowId);
+        //    if (instance == null)
+        //        return NotFound("No active workflow found in chain.");
 
-            var orderedSteps = instance.Workflow.Steps.OrderBy(s => s.Order).ToList();
-            var currentStep = instance.CurrentStep;
-            var currentIndex = orderedSteps.FindIndex(s => s.Id == instance.CurrentStepId);
-            var nextStep = currentIndex >= 0 && currentIndex < orderedSteps.Count - 1
-                ? orderedSteps[currentIndex + 1]
-                : null;
+        //    var orderedSteps = instance.Workflow.Steps.OrderBy(s => s.Order).ToList();
+        //    var currentStep = instance.CurrentStep;
+        //    var currentIndex = orderedSteps.FindIndex(s => s.Id == instance.CurrentStepId);
+        //    var nextStep = currentIndex >= 0 && currentIndex < orderedSteps.Count - 1
+        //        ? orderedSteps[currentIndex + 1]
+        //        : null;
 
-            return Ok(new
-            {
-                instanceId = instance.Id,
-                workflowId = instance.Workflow.Id,
-                workflowName = instance.Workflow.Name,
-                workflowStatus = instance.WorkflowStatus.Name,
-                currentStepId = currentStep?.Id,
-                currentStepName = currentStep?.Name,
-                currentStepStatus = currentStep?.workflowStatus.Name,
-                currentAssignedRole = currentStep?.appRole.Name,
-                nextStepId = nextStep?.Id,
-                nextStepName = nextStep?.Name,
-                nextStepStatus = nextStep?.workflowStatus.Name,
-                nextAssignedRole = nextStep?.appRole.Name,
-                steps = instance.Workflow.Steps.Select(s => new
-                {
-                    s.Id,
-                    s.Name,
-                    Status = s.workflowStatus.Name,
-                    AssignedRole = s.appRole.Name
-                })
-            });
-        }
+        //    return Ok(new
+        //    {
+        //        instanceId = instance.Id,
+        //        workflowId = instance.Workflow.Id,
+        //        workflowName = instance.Workflow.Name,
+        //        workflowStatus = instance.WorkflowStatus.Name,
+        //        currentStepId = currentStep?.Id,
+        //        currentStepName = currentStep?.Name,
+        //        currentStepStatus = currentStep?.workflowStatus.Name,
+        //        currentAssignedRole = currentStep?.appRole.Name,
+        //        nextStepId = nextStep?.Id,
+        //        nextStepName = nextStep?.Name,
+        //        nextStepStatus = nextStep?.workflowStatus.Name,
+        //        nextAssignedRole = nextStep?.appRole.Name,
+        //        steps = instance.Workflow.Steps.Select(s => new
+        //        {
+        //            s.Id,
+        //            s.Name,
+        //            Status = s.workflowStatus.Name,
+        //            AssignedRole = s.appRole.Name
+        //        })
+        //    });
+        //}
+    
     }
 }

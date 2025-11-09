@@ -157,36 +157,36 @@ namespace DynamicWorkflow.API.Controllers
             }
         }
 
-        [HttpPost("{id}/start")]
-        public async Task<ActionResult<WorkflowInstance>> StartWorkflow(int id)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var user = await _context.ApplicationUsers.FindAsync(Guid.Parse(userId));
+        //[HttpPost("{id}/start")]
+        //public async Task<ActionResult<WorkflowInstance>> StartWorkflow(int id)
+        //{
+        //    try
+        //    {
+        //        var userId = GetCurrentUserId();
+        //        var user = await _context.ApplicationUsers.FindAsync(Guid.Parse(userId));
 
-                if (user == null)
-                    return Unauthorized(new { message = "User not found" });
+        //        if (user == null)
+        //            return Unauthorized(new { message = "User not found" });
 
-                var result = await _workflowService.StartWorkflowAsync(id, user);
+        //        var result = await _workflowService.StartWorkflowAsync(id, user);
 
-                if (!result)
-                    return BadRequest(new { message = "Failed to start workflow" });
+        //        if (!result)
+        //            return BadRequest(new { message = "Failed to start workflow" });
 
-                // Get the created instance
-                var workflow = await _workflowService.GetWorkflowByIdAsync(id);
-                var instance = workflow?.Instances.OrderByDescending(i => i.CreatedAt).FirstOrDefault();
+        //        // Get the created instance
+        //        var workflow = await _workflowService.GetWorkflowByIdAsync(id);
+        //        var instance = workflow?.Instances.OrderByDescending(i => i.CreatedAt).FirstOrDefault();
 
-                return CreatedAtAction(
-                    nameof(GetInstance),
-                    new { id = instance?.Id },
-                    instance);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error starting workflow", error = ex.Message });
-            }
-        }
+        //        return CreatedAtAction(
+        //            nameof(GetInstance),
+        //            new { id = instance?.Id },
+        //            instance);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { message = "Error starting workflow", error = ex.Message });
+        //    }
+        //}
 
         [HttpPost("{id}/instance")]
         public async Task<ActionResult<WorkflowInstance>> CreateInstance(int id)
@@ -230,45 +230,45 @@ namespace DynamicWorkflow.API.Controllers
             }
         }
 
-        [HttpPost("instance/{instanceId}/cancel")]
-        public async Task<ActionResult> CancelWorkflow(int instanceId, [FromBody] CancelWorkflowRequest request)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
+        //[HttpPost("instance/{instanceId}/cancel")]
+        //public async Task<ActionResult> CancelWorkflow(int instanceId, [FromBody] CancelWorkflowRequest request)
+        //{
+        //    try
+        //    {
+        //        var userId = GetCurrentUserId();
 
-                var result = await _workflowService.CancelWorkflowAsync(instanceId, userId, request.Reason);
+        //        var result = await _workflowService.CancelWorkflowAsync(instanceId, userId, request.Reason);
 
-                if (!result)
-                    return BadRequest(new { message = "Failed to cancel workflow" });
+        //        if (!result)
+        //            return BadRequest(new { message = "Failed to cancel workflow" });
 
-                return Ok(new { message = "Workflow cancelled successfully" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error cancelling workflow", error = ex.Message });
-            }
-        }
+        //        return Ok(new { message = "Workflow cancelled successfully" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { message = "Error cancelling workflow", error = ex.Message });
+        //    }
+        //}
 
-        [HttpPost("instance/{instanceId}/restart")]
-        public async Task<ActionResult> RestartWorkflow(int instanceId)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
+        //[HttpPost("instance/{instanceId}/restart")]
+        //public async Task<ActionResult> RestartWorkflow(int instanceId)
+        //{
+        //    try
+        //    {
+        //        var userId = GetCurrentUserId();
 
-                var result = await _workflowService.RestartWorkflowAsync(instanceId, userId);
+        //        var result = await _workflowService.RestartWorkflowAsync(instanceId, userId);
 
-                if (!result)
-                    return BadRequest(new { message = "Failed to restart workflow" });
+        //        if (!result)
+        //            return BadRequest(new { message = "Failed to restart workflow" });
 
-                return Ok(new { message = "Workflow restarted successfully" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error restarting workflow", error = ex.Message });
-            }
-        }
+        //        return Ok(new { message = "Workflow restarted successfully" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { message = "Error restarting workflow", error = ex.Message });
+        //    }
+        //}
 
         private string GetCurrentUserId()
         {

@@ -12,7 +12,7 @@ namespace DynamicWorkflow.APIs.Controllers
     [Route("api/[controller]")]
     public class AccountController(IMapper _mapper,
         SignInManager<ApplicationUser> _signInManager,
-        IAccountService _accountService) : ApiController
+        IAccountService _accountService) : ControllerBase
     {
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
