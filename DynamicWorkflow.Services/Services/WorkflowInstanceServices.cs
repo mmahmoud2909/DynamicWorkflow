@@ -19,6 +19,8 @@ namespace DynamicWorkflow.Services.Services
             var workflow = await _context.Workflows
                 .Include(w => w.Steps)
                     .ThenInclude(s => s.workflowStatus)
+                .Include(w => w.Steps)
+                    .ThenInclude(s => s.appRole)
                 .Include(w => w.WorkflowStatus)
                 .FirstOrDefaultAsync(w => w.Id == workflowId);
 
@@ -35,6 +37,7 @@ namespace DynamicWorkflow.Services.Services
                 CurrentStepId = firstStep.Id,
                 CurrentStep = firstStep,
                 WorkflowStatusId = firstStep.WorkflowStatusId,
+                WorkflowStatus = firstStep.workflowStatus,
                 StatusText = $"Pending on {firstStep.Name}",
                 CreatedBy = createdBy.Id.ToString(),
                 CreatedAt = DateTime.UtcNow
@@ -42,7 +45,20 @@ namespace DynamicWorkflow.Services.Services
 
             _context.WorkflowInstances.Add(instance);
             await _context.SaveChangesAsync();
-            return instance;
+
+            return await _context.WorkflowInstances
+        .Include(i => i.Workflow)
+            .ThenInclude(w => w.Steps)
+                .ThenInclude(s => s.workflowStatus)
+        .Include(i => i.Workflow)
+            .ThenInclude(w => w.Steps)
+                .ThenInclude(s => s.appRole)
+        .Include(i => i.CurrentStep)
+            .ThenInclude(s => s.workflowStatus)
+        .Include(i => i.CurrentStep)
+            .ThenInclude(s => s.appRole)
+        .Include(i => i.WorkflowStatus)
+        .FirstOrDefaultAsync(i => i.Id == instance.Id);
         }
 
         public async Task<(WorkflowInstance CurrentInstance, WorkflowInstance? NextWorkflowInstance)> MakeActionAsync(
@@ -223,12 +239,19 @@ namespace DynamicWorkflow.Services.Services
         public async Task<WorkflowInstance?> GetByIdAsync(int id)
         {
             return await _context.WorkflowInstances
-                .Include(i => i.Workflow)
-                    .ThenInclude(w => w.Steps)
-                .Include(i => i.CurrentStep)
-                .Include(i => i.Transitions)
-                .Include(i => i.WorkflowStatus)
-                .FirstOrDefaultAsync(i => i.Id == id);
+        .Include(i => i.Workflow)
+            .ThenInclude(w => w.Steps)
+                .ThenInclude(s => s.workflowStatus)
+        .Include(i => i.Workflow)
+            .ThenInclude(w => w.Steps)
+                .ThenInclude(s => s.appRole)
+        .Include(i => i.CurrentStep)
+            .ThenInclude(s => s.workflowStatus)
+        .Include(i => i.CurrentStep)
+            .ThenInclude(s => s.appRole)
+        .Include(i => i.WorkflowStatus)
+        .Include(i => i.Transitions)
+        .FirstOrDefaultAsync(i => i.Id == id);
         }
 
         public async Task<List<WorkflowInstance>> GetWorkflowChainInstancesAsync(int? parentWorkflowId)
@@ -243,6 +266,7 @@ namespace DynamicWorkflow.Services.Services
                 .OrderBy(i => i.Workflow.Order)
                 .ToListAsync();
         }
+        
         public async Task<bool> IsWorkflowChainCompletedAsync(int? parentWorkflowId)
         {
             var allWorkflows = await _context.Workflows
@@ -265,7 +289,7 @@ namespace DynamicWorkflow.Services.Services
             }
             return true;
         }
-
+        
         public async Task<WorkflowInstance?> GetActiveInstanceInChainAsync(int? parentWorkflowId)
         {
             var allWorkflows = await _context.Workflows
