@@ -6,7 +6,7 @@ namespace DynamicWorkflow.Core.DTOs.User
     {
         public string Username { get; set; }
         public string DisplayName { get; set; }
-        public AppRole Role { get; set; }
+        public String Role { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
         public Guid DepartmentId { get; set; }

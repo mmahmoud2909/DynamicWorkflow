@@ -14,6 +14,7 @@ namespace DynamicWorkflow.Core.Interfaces
         // Departments
         Task<List<DepartmentDto>> GetDepartmentsAsync();
         Task<DepartmentDto> CreateDepartmentAsync(CreateDepartmentDto dto);
+        Task<DepartmentDto?> GetDepartmentByIdAsync(Guid id);
         Task UpdateDepartmentAsync(Guid id, UpdateDepartmentDto dto);
         Task DeleteDepartmentAsync(Guid id);
     }

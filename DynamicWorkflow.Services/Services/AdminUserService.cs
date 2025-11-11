@@ -62,7 +62,7 @@ namespace DynamicWorkflow.Services.Services
             var dept = await _db.Departments.FindAsync(dto.DepartmentId);
             if (dept == null) throw new KeyNotFoundException("Department not found");
 
-            var roleName = dto.Role.Name.ToString();
+            var roleName = dto.Role;
 
             if (!await _roleManager.RoleExistsAsync(roleName))
             {
@@ -142,6 +142,13 @@ namespace DynamicWorkflow.Services.Services
             var dept = new Department { Id = Guid.NewGuid(), Name = dto.Name };
             _db.Departments.Add(dept);
             await _db.SaveChangesAsync();
+            return new DepartmentDto(dept.Id, dept.Name);
+        }
+        public async Task<DepartmentDto?> GetDepartmentByIdAsync(Guid id)
+        {
+            var dept = await _db.Departments.FindAsync(id);
+            if (dept == null) return null;
+
             return new DepartmentDto(dept.Id, dept.Name);
         }
 

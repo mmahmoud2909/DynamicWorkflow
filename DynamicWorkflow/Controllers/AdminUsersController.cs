@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DynamicWorkflow.APIs.Controllers
 {
     [ApiController]
-    [Route("api/admin/users")]
+    [Route("api/admin")]
     [Authorize(Policy = "AdminOnly")]
     public class AdminUsersController : ControllerBase
     {
@@ -15,7 +15,7 @@ namespace DynamicWorkflow.APIs.Controllers
         public AdminUsersController(IAdminUserService svc) => _svc = svc;
 
         [HttpGet("GetAllUsers")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAllUsers()
         {
             var users = await _svc.GetAllUsersAsync();
 
@@ -30,8 +30,8 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        [HttpGet("GetUserbyId/{id:guid}")]
-        public async Task<IActionResult> Get(Guid id)
+        [HttpGet("GetUserById/{id:guid}")]
+        public async Task<IActionResult> GetUserById(Guid id)
         {
             var user = await _svc.GetUserByIdAsync(id);
             if (user == null)
@@ -44,15 +44,15 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        [HttpPost("CreateUser")]
-        public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
+        [HttpPost("CreateUsers")]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Invalid data provided.", errors = ModelState });
 
             var created = await _svc.CreateUserAsync(dto);
 
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, new
+            return CreatedAtAction(nameof(GetUserById), new { id = created.Id }, new
             {
                 message = "✅ User created successfully.",
                 user = new
@@ -70,8 +70,8 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        [HttpPut("UpdateUser/{id:guid}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserDto dto)
+        [HttpPut("UpdateUsers/{id:guid}")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserDto dto)
         {
             await _svc.UpdateUserAsync(id, dto);
 
@@ -82,15 +82,14 @@ namespace DynamicWorkflow.APIs.Controllers
             });
         }
 
-        [HttpDelete("DeleteUser/{id:guid}")]
-        public async Task<IActionResult> Delete(Guid id)
+        [HttpDelete("DeleteUsers/{id:guid}")]
+        public async Task<IActionResult> DeleteUser(Guid id)
         {
             await _svc.DeleteUserAsync(id);
             return Ok(new { message = $"🗑️ User with ID {id} deleted successfully." });
         }
-
         [HttpGet("GetAllDepartments")]
-        public async Task<IActionResult> GetDepartments()
+        public async Task<IActionResult> GetAllDepartments()
         {
             var departments = await _svc.GetDepartmentsAsync();
 
@@ -104,19 +103,32 @@ namespace DynamicWorkflow.APIs.Controllers
                 departments
             });
         }
+        [HttpGet("GetDepartmentById/{id:guid}")]
+        public async Task<IActionResult> GetDepartmentById(Guid id)
+        {
+            var department = await _svc.GetDepartmentByIdAsync(id);
+            if (department == null)
+                return NotFound(new { message = "❌ Department not found." });
 
-        [HttpPost("CreateDepartment")]
+            return Ok(new
+            {
+                message = "✅ Department retrieved successfully.",
+                department
+            });
+        }
+
+        [HttpPost("CreateDepartments")]
         public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentDto dto)
         {
             var d = await _svc.CreateDepartmentAsync(dto);
-            return CreatedAtAction(nameof(GetDepartments), new
+            return CreatedAtAction(nameof(GetDepartmentById), new { id = d.Id }, new
             {
                 message = "✅ Department created successfully.",
                 department = new { d.Id, d.Name }
             });
         }
 
-        [HttpPut("UpdateDepartment/{id:guid}")]
+        [HttpPut("UpdateDepartments/{id:guid}")]
         public async Task<IActionResult> UpdateDepartment(Guid id, [FromBody] UpdateDepartmentDto dto)
         {
             await _svc.UpdateDepartmentAsync(id, dto);
