@@ -1,4 +1,5 @@
-﻿using DynamicWorkflow.Infrastructure.Identity;
+﻿using DynamicWorkflow.Core.Entities;
+using DynamicWorkflow.Infrastructure.Identity;
 using DynamicWorkflow.Services.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -69,96 +70,119 @@ namespace DynamicWorkflow.APIs.Controllers
         [Authorize]
         public async Task<IActionResult> MakeAction(int instanceId, [FromQuery] int actionTypeId)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
-            if (user == null)
-                return Unauthorized("User not found.");
-
-            var (completedInstance, nextWorkflowInstance) = await _instanceService.MakeActionAsync(instanceId, actionTypeId, user);
-
-            if (nextWorkflowInstance != null)
+            try
             {
-                var orderedSteps = nextWorkflowInstance.Workflow.Steps.OrderBy(s => s.Order).ToList();
-                var currentStep = nextWorkflowInstance.CurrentStep;
-                var currentIndex = orderedSteps.FindIndex(s => s.Id == nextWorkflowInstance.CurrentStepId);
-                var nextStep = currentIndex >= 0 && currentIndex < orderedSteps.Count - 1
-                    ? orderedSteps[currentIndex + 1]
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+                if (user == null)
+                    return Unauthorized("User not found.");
+
+                var (completedInstance, nextWorkflowInstance) = await _instanceService.MakeActionAsync(instanceId, actionTypeId, user);
+
+                if (completedInstance == null)
+                    return BadRequest("Failed to process action.");
+
+                // Safe navigation with null checks
+                var completedWorkflow = completedInstance.Workflow;
+                var completedWorkflowStatus = completedInstance.WorkflowStatus;
+
+                if (nextWorkflowInstance != null)
+                {
+                    var nextWorkflow = nextWorkflowInstance.Workflow;
+                    var nextWorkflowStatus = nextWorkflowInstance.WorkflowStatus;
+                    var nextOrderedSteps = nextWorkflow?.Steps?.OrderBy(s => s.Order).ToList() ?? new List<WorkflowStep>();
+                    var nextCurrentStep = nextWorkflowInstance.CurrentStep;
+                    var nextCurrentIndex = nextOrderedSteps.FindIndex(s => s.Id == nextWorkflowInstance.CurrentStepId);
+                    var nextNextStep = nextCurrentIndex >= 0 && nextCurrentIndex < nextOrderedSteps.Count - 1
+                        ? nextOrderedSteps[nextCurrentIndex + 1]
+                        : null;
+
+                    return Ok(new
+                    {
+                        message = $"✅ Workflow '{completedWorkflow?.Name}' completed! Moved to '{nextWorkflow?.Name}'.",
+                        workflowChained = true,
+
+                        instanceId = nextWorkflowInstance.Id,
+                        workflowId = nextWorkflow?.Id,
+                        workflowName = nextWorkflow?.Name,
+                        workflowStatus = nextWorkflowStatus?.Name,
+
+                        currentStepId = nextCurrentStep?.Id,
+                        currentStepName = nextCurrentStep?.Name,
+                        currentStepStatus = nextCurrentStep?.workflowStatus?.Name,
+                        currentAssignedRole = nextCurrentStep?.appRole?.Name,
+
+                        nextStepId = nextNextStep?.Id,
+                        nextStepName = nextNextStep?.Name,
+                        nextStepStatus = nextNextStep?.workflowStatus?.Name,
+                        nextAssignedRole = nextNextStep?.appRole?.Name,
+
+                        previousWorkflow = new
+                        {
+                            instanceId = completedInstance.Id,
+                            workflowId = completedWorkflow?.Id,
+                            name = completedWorkflow?.Name,
+                            status = completedWorkflowStatus?.Name
+                        },
+
+                        steps = nextOrderedSteps.Select(s => new
+                        {
+                            s.Id,
+                            s.Name,
+                            Status = s.workflowStatus?.Name ?? "Unknown",
+                            AssignedRole = s.appRole?.Name ?? "Unknown"
+                        })
+                    });
+                }
+
+                // Normal flow - no workflow chaining
+                var orderedStepsNormal = completedWorkflow?.Steps?.OrderBy(s => s.Order).ToList() ?? new List<WorkflowStep>();
+                var currentStepNormal = completedInstance.CurrentStep;
+                var currentIndexNormal = orderedStepsNormal.FindIndex(s => s.Id == completedInstance.CurrentStepId);
+                var nextStepNormal = currentIndexNormal >= 0 && currentIndexNormal < orderedStepsNormal.Count - 1
+                    ? orderedStepsNormal[currentIndexNormal + 1]
                     : null;
 
                 return Ok(new
                 {
-                    message = $"✅ Workflow '{completedInstance.Workflow.Name}' completed! Moved to '{nextWorkflowInstance.Workflow.Name}'.",
-                    workflowChained = true,
+                    message = "✅ Action applied successfully.",
+                    workflowChained = false,
 
-                    instanceId = nextWorkflowInstance.Id,
-                    workflowId = nextWorkflowInstance.Workflow.Id,
-                    workflowName = nextWorkflowInstance.Workflow.Name,
-                    workflowStatus = nextWorkflowInstance.WorkflowStatus.Name,
+                    instanceId = completedInstance.Id,
+                    workflowId = completedWorkflow?.Id,
+                    workflowName = completedWorkflow?.Name,
+                    workflowStatus = completedWorkflowStatus?.Name,
 
-                    currentStepId = currentStep?.Id,
-                    currentStepName = currentStep?.Name,
-                    currentStepStatus = currentStep?.workflowStatus.Name,
-                    currentAssignedRole = currentStep?.appRole.Name,
+                    currentStepId = currentStepNormal?.Id,
+                    currentStepName = currentStepNormal?.Name,
+                    currentStepStatus = currentStepNormal?.workflowStatus?.Name,
+                    currentAssignedRole = currentStepNormal?.appRole?.Name,
 
-                    nextStepId = nextStep?.Id,
-                    nextStepName = nextStep?.Name,
-                    nextStepStatus = nextStep?.workflowStatus.Name,
-                    nextAssignedRole = nextStep?.appRole.Name,
+                    nextStepId = nextStepNormal?.Id,
+                    nextStepName = nextStepNormal?.Name,
+                    nextStepStatus = nextStepNormal?.workflowStatus?.Name,
+                    nextAssignedRole = nextStepNormal?.appRole?.Name,
 
-                    previousWorkflow = new
-                    {
-                        instanceId = completedInstance.Id,
-                        workflowId = completedInstance.Workflow.Id,
-                        name = completedInstance.Workflow.Name,
-                        status = completedInstance.WorkflowStatus.Name
-                    },
-
-                    steps = nextWorkflowInstance.Workflow.Steps.Select(s => new
+                    steps = orderedStepsNormal.Select(s => new
                     {
                         s.Id,
                         s.Name,
-                        Status = s.workflowStatus.Name,
-                        AssignedRole = s.appRole.Name
+                        Status = s.workflowStatus?.Name ?? "Unknown",
+                        AssignedRole = s.appRole?.Name ?? "Unknown"
                     })
                 });
             }
-
-            // Normal flow - no workflow chaining
-            var orderedStepsNormal = completedInstance.Workflow.Steps.OrderBy(s => s.Order).ToList();
-            var currentStepNormal = completedInstance.CurrentStep;
-            var currentIndexNormal = orderedStepsNormal.FindIndex(s => s.Id == completedInstance.CurrentStepId);
-            var nextStepNormal = currentIndexNormal >= 0 && currentIndexNormal < orderedStepsNormal.Count - 1
-                ? orderedStepsNormal[currentIndexNormal + 1]
-                : null;
-
-            return Ok(new
+            catch (UnauthorizedAccessException ex)
             {
-                message = "✅ Action applied successfully.",
-                workflowChained = false,
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing workflow action: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
 
-                instanceId = completedInstance.Id,
-                workflowId = completedInstance.Workflow.Id,
-                workflowName = completedInstance.Workflow.Name,
-                workflowStatus = completedInstance.WorkflowStatus.Name,
-
-                currentStepId = currentStepNormal?.Id,
-                currentStepName = currentStepNormal?.Name,
-                currentStepStatus = currentStepNormal?.workflowStatus.Name,
-                currentAssignedRole = currentStepNormal?.appRole.Name,
-
-                nextStepId = nextStepNormal?.Id,
-                nextStepName = nextStepNormal?.Name,
-                nextStepStatus = nextStepNormal?.workflowStatus.Name,
-                nextAssignedRole = nextStepNormal?.appRole.Name,
-
-                steps = completedInstance.Workflow.Steps.Select(s => new
-                {
-                    s.Id,
-                    s.Name,
-                    Status = s.workflowStatus.Name,
-                    AssignedRole = s.appRole.Name
-                })
-            });
+                return StatusCode(500, new { message = "Error processing workflow action", error = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
