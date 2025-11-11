@@ -68,12 +68,19 @@ namespace DynamicWorkflow.Services.Services
             try
             {
                 var instance = await _context.WorkflowInstances
-                    .Include(i => i.Workflow)
-                        .ThenInclude(w => w.Steps)
-                            .ThenInclude(s => s.workflowStatus)
-                    .Include(i => i.CurrentStep)
-                    .Include(i => i.Transitions)
-                    .FirstOrDefaultAsync(i => i.Id == instanceId);
+            .Include(i => i.Workflow)
+                .ThenInclude(w => w.Steps)
+                    .ThenInclude(s => s.workflowStatus)
+            .Include(i => i.Workflow)
+                .ThenInclude(w => w.Steps)
+                    .ThenInclude(s => s.appRole)
+            .Include(i => i.CurrentStep)
+                .ThenInclude(s => s.workflowStatus)
+            .Include(i => i.CurrentStep)
+                .ThenInclude(s => s.appRole)
+            .Include(i => i.WorkflowStatus)
+            .Include(i => i.Transitions)
+            .FirstOrDefaultAsync(i => i.Id == instanceId);
 
                 if (instance == null)
                     throw new Exception($"Instance {instanceId} not found.");
@@ -190,50 +197,43 @@ namespace DynamicWorkflow.Services.Services
 
                 await _context.SaveChangesAsync();
 
-                if (direction == "Completed")
-                {
-                    var parentId = instance.Workflow.ParentWorkflowId;
-                    var nextWorkflow = await _context.Workflows
-                        .Where(w => w.ParentWorkflowId == parentId && w.Order > instance.Workflow.Order)
-                        .OrderBy(w => w.Order)
-                        .Include(w => w.Steps)
-                        .FirstOrDefaultAsync();
+                var reloadedInstance = await LoadInstanceWithRelatedDataAsync(instance.Id);
+                if (reloadedInstance == null)
+                    throw new Exception("Failed to reload instance after action.");
 
-                    if (nextWorkflow != null)
-                    {
-                        var firstStepOfNext = nextWorkflow.Steps.OrderBy(s => s.Order).FirstOrDefault();
-                        if (firstStepOfNext != null)
-                        {
-                            nextWorkflowInstance = new WorkflowInstance
-                            {
-                                WorkflowId = nextWorkflow.Id,
-                                Workflow = nextWorkflow,
-                                CurrentStepId = firstStepOfNext.Id,
-                                CurrentStep = firstStepOfNext,
-                                WorkflowStatusId = firstStepOfNext.WorkflowStatusId,
-                                StatusText = $"Pending on {firstStepOfNext.Name}",
-                                CreatedBy = currentUser.Id.ToString(),
-                                CreatedAt = DateTime.UtcNow
-                            };
-                            _context.WorkflowInstances.Add(nextWorkflowInstance);
-                            await _context.SaveChangesAsync();
-                            direction = "CompletedAndChained";
-                        }
-                    }
-                    else
-                    {
-                        direction = "AllWorkflowsCompleted";
-                    }
+                WorkflowInstance? reloadedNextInstance = null;
+                if (nextWorkflowInstance != null)
+                {
+                    reloadedNextInstance = await LoadInstanceWithRelatedDataAsync(nextWorkflowInstance.Id);
                 }
 
                 await transaction.CommitAsync();
-                return (instance, nextWorkflowInstance);
+                return (reloadedInstance, reloadedNextInstance);
             }
             catch
             {
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        // Helper method to load instance with all related data
+        private async Task<WorkflowInstance?> LoadInstanceWithRelatedDataAsync(int instanceId)
+        {
+            return await _context.WorkflowInstances
+                .Include(i => i.Workflow)
+                    .ThenInclude(w => w.Steps)
+                        .ThenInclude(s => s.workflowStatus)
+                .Include(i => i.Workflow)
+                    .ThenInclude(w => w.Steps)
+                        .ThenInclude(s => s.appRole)
+                .Include(i => i.CurrentStep)
+                    .ThenInclude(s => s.workflowStatus)
+                .Include(i => i.CurrentStep)
+                    .ThenInclude(s => s.appRole)
+                .Include(i => i.WorkflowStatus)
+                .Include(i => i.Transitions)
+                .FirstOrDefaultAsync(i => i.Id == instanceId);
         }
 
         public async Task<WorkflowInstance?> GetByIdAsync(int id)
