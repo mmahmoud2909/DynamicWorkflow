@@ -7,6 +7,7 @@ using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace DynamicWorkflow.Services.Services
 {
@@ -33,11 +34,12 @@ namespace DynamicWorkflow.Services.Services
         {
             var users = await _userManager.Users
                 .Include(u => u.Department)
+                .Include(u=>u.AppRole)
                 .ToListAsync();
 
             return users.Select(u => new UserDto(
                 u.Id, u.UserName!, u.Email!, u.DisplayName,
-    u.DepartmentId, u.ManagerId, u.IsPendingDeletion,
+    u.DepartmentId,u.AppRoleId, u.ManagerId, u.IsPendingDeletion,
     u.RegisteredAt, u.ProfilePicUrl
             )).ToList();
         }
@@ -52,7 +54,7 @@ namespace DynamicWorkflow.Services.Services
 
             return new UserDto(
                 u.Id, u.UserName!, u.Email!, u.DisplayName,
-                u.DepartmentId, u.ManagerId, u.IsPendingDeletion,
+                u.DepartmentId,u.AppRoleId, u.ManagerId, u.IsPendingDeletion,
                 u.RegisteredAt, u.ProfilePicUrl
             );
         }
@@ -94,7 +96,7 @@ namespace DynamicWorkflow.Services.Services
 
             return new UserDto(
                 user.Id, user.UserName!, user.Email!,
-                user.DisplayName, user.DepartmentId,
+                user.DisplayName, user.DepartmentId,user.AppRoleId,
                 user.ManagerId, user.IsPendingDeletion,
                 user.RegisteredAt, user.ProfilePicUrl
             );
