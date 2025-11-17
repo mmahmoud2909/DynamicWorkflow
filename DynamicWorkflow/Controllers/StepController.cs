@@ -56,80 +56,14 @@ namespace DynamicWorkflow.APIs.Controllers
             }
         }
 
-        [HttpPost("{workflowId}/step/{stepId}/action")]
-        public async Task<IActionResult> PerformAction(int workflowId, int stepId, [FromQuery] int actionTypeId)
-        {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
-                if (currentUser == null)
-                    return Unauthorized("User not found or not authenticated.");
-
-                var workflow = await _context.Workflows
-                    .Include(w => w.Steps)
-                    .FirstOrDefaultAsync(w => w.Id == workflowId);
-
-                if (workflow == null)
-                    return NotFound($"Workflow with ID {workflowId} not found.");
-
-                await _stepService.MakeActionAsync(workflow, stepId, actionTypeId, currentUser);
-
-                var updatedStep = await _stepService.GetStepByIdAsync(stepId);
-
-                return Ok(new
-                {
-                    message = "Action completed successfully",
-                    workflowId,
-                    stepId,
-                    actionTypeId,
-                    performedBy = currentUser.DisplayName,
-                    stepStatus = updatedStep?.workflowStatus?.Name
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpGet("steps/{stepId}/can-perform")]
-        public async Task<IActionResult> CanPerformStep(int stepId)
-        {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
-                if (currentUser == null)
-                    return Unauthorized("User not found or not authenticated.");
-
-                var canPerform = await _stepService.CanUserPerformStepAsync(stepId, currentUser);
-
-                return Ok(new
-                {
-                    stepId,
-                    userId = currentUser.Id,
-                    canPerform,
-                    userRoles = await GetUserRoles(currentUser.Id)
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
         [Authorize(Policy = "AdminOnly")]
         [HttpPost("Admin/AddStep/{workflowId:int}")]
         public async Task<IActionResult> AddStep(int workflowId, [FromBody] CreateStepDto dto)
         {
             var stepId = await _svc.AddStepAsync(workflowId, dto);
-            return CreatedAtAction(nameof(Get), new { id = workflowId }, new { stepId });
+            return Created("", new { stepId });
         }
+        [NonAction]
         public async Task<IActionResult> Get(int id)
         {
             var wf = await _svc.GetWorkflowByIdAsync(id);

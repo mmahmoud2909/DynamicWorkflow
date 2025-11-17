@@ -1,4 +1,5 @@
-﻿using DynamicWorkflow.Core.Entities;
+﻿using DynamicWorkflow.Core.DTOs.StepDto;
+using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
@@ -64,21 +65,44 @@ namespace DynamicWorkflow.Services.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<WorkflowStep>> GetAllStepsAsync(int workflowId)
+        public async Task<List<StepDto>> GetAllStepsAsync(int workflowId)
         {
-            var workflow = await _context.Workflows
-                .Include(w => w.Steps)
-                    .ThenInclude(s => s.workflowStatus)
-                .Include(w => w.Steps)
-                    .ThenInclude(s => s.actionTypeEntity)
-                .Include(w => w.Steps)
-                    .ThenInclude(s => s.appRole)
-                .FirstOrDefaultAsync(w => w.Id == workflowId);
+            return await _context.WorkflowSteps
+                .Where(s => s.WorkflowId == workflowId)
+                .OrderBy(s => s.Order)
+                .Select(s => new StepDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Comments = s.Comments,
+                    Order = s.Order,
+                    IsEndStep = s.isEndStep,
 
-            if (workflow == null)
-                throw new Exception("Workflow not found.");
+                    WorkflowStatusId = s.WorkflowStatusId,
+                    WorkflowStatus = s.workflowStatus == null ? null : new WorkflowStatusDto
+                    {
+                        Id = s.workflowStatus.Id,
+                        Name = s.workflowStatus.Name,
+                        Description = s.workflowStatus.Description
+                    },
 
-            return workflow.Steps.OrderBy(s => s.Order).ToList();
+                    ActionTypeEntityId = s.ActionTypeEntityId,
+                    ActionTypeEntity = s.actionTypeEntity == null ? null : new ActionTypeDto
+                    {
+                        Id = s.actionTypeEntity.Id,
+                        Name = s.actionTypeEntity.Name,
+                        Description = s.actionTypeEntity.Description
+                    },
+
+                    AppRoleId = s.AppRoleId,
+                    AppRole = s.appRole == null ? null : new AppRoleDto
+                    {
+                        Id = s.appRole.Id,
+                        Name = s.appRole.Name,
+                        Description = s.appRole.Description
+                    }
+                })
+                .ToListAsync();
         }
 
         public async Task<WorkflowStep?> GetStepByIdAsync(int stepId)

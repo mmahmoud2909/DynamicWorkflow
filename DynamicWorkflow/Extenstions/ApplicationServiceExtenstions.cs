@@ -34,6 +34,7 @@ namespace DynamicWorkflow.APIs.Extenstions
             services.AddScoped<IWorkflow, WorkflowRepository>();
             services.AddScoped<IAdminUserService, AdminUserService>();
             services.AddScoped<IAdminWorkflowService, AdminWorkflowService>();
+            services.AddScoped<IStepService, StepService>();
 
             services.AddAutoMapper(cfg =>
             {
