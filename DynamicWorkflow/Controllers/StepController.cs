@@ -1,4 +1,4 @@
-﻿using DynamicWorkflow.Core.Entities;
+﻿using DynamicWorkflow.Core.DTOs.StepDto;
 using DynamicWorkflow.Core.Interfaces;
 using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -15,14 +15,17 @@ namespace DynamicWorkflow.APIs.Controllers
     {
         private readonly IStepService _stepService;
         private readonly ApplicationIdentityDbContext _context;
+        
+        private readonly IAdminWorkflowService _svc;
 
-        public StepController(IStepService stepService, ApplicationIdentityDbContext context)
+        public StepController(IStepService stepService, ApplicationIdentityDbContext context, IAdminWorkflowService svc)
         {
             _stepService = stepService;
             _context = context;
+            _svc = svc;
         }
 
-        [HttpGet("{workflowId}/steps")]
+        [HttpGet("{workflowId}/getallsteps")]
         public async Task<IActionResult> GetAllSteps(int workflowId)
         {
             try
@@ -120,81 +123,32 @@ namespace DynamicWorkflow.APIs.Controllers
             }
         }
 
-        [HttpPost("steps")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> CreateStep([FromBody] CreateStepRequest request)
+        [HttpPost("Admin/AddStep/{workflowId:int}")]
+        public async Task<IActionResult> AddStep(int workflowId, [FromBody] CreateStepDto dto)
         {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                var step = new WorkflowStep
-                {
-                    Name = request.Name,
-                    Comments = request.Comments,
-                    Order = request.Order,
-                    WorkflowStatusId = request.WorkflowStatusId,
-                    ActionTypeEntityId = request.ActionTypeEntityId,
-                    AppRoleId = request.AppRoleId,
-                    isEndStep = request.IsEndStep,
-                    WorkflowId = request.WorkflowId,
-                    AssignedUserId = request.AssignedUserId
-                };
-
-                var createdStep = await _stepService.CreateStepAsync(step, userId);
-
-                return CreatedAtAction(nameof(GetStepById), new { stepId = createdStep.Id }, createdStep);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var stepId = await _svc.AddStepAsync(workflowId, dto);
+            return CreatedAtAction(nameof(Get), new { id = workflowId }, new { stepId });
+        }
+        public async Task<IActionResult> Get(int id)
+        {
+            var wf = await _svc.GetWorkflowByIdAsync(id);
+            return wf == null ? NotFound() : Ok(wf);
         }
 
-        [HttpPut("steps/{stepId}")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> UpdateStep(int stepId, [FromBody] UpdateStepRequest request)
+        [HttpPut("Admin/UpdateStep/{stepId:int}")]
+        public async Task<IActionResult> UpdateStep(int stepId, [FromBody] UpdateStepDto dto)
         {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var existingStep = await _stepService.GetStepByIdAsync(stepId);
+            await _svc.UpdateStepAsync(stepId, dto);
+            return NoContent();
+        }
 
-                if (existingStep == null)
-                    return NotFound($"Step with ID {stepId} not found.");
-
-                if (!string.IsNullOrEmpty(request.Name))
-                    existingStep.Name = request.Name;
-
-                if (request.Comments != null)
-                    existingStep.Comments = request.Comments;
-
-                if (request.Order.HasValue)
-                    existingStep.Order = request.Order.Value;
-
-                if (request.WorkflowStatusId.HasValue)
-                    existingStep.WorkflowStatusId = request.WorkflowStatusId.Value;
-
-                if (request.ActionTypeEntityId.HasValue)
-                    existingStep.ActionTypeEntityId = request.ActionTypeEntityId.Value;
-
-                if (request.AppRoleId.HasValue)
-                    existingStep.AppRoleId = request.AppRoleId.Value;
-
-                if (request.IsEndStep.HasValue)
-                    existingStep.isEndStep = request.IsEndStep.Value;
-
-                if (request.AssignedUserId.HasValue)
-                    existingStep.AssignedUserId = request.AssignedUserId.Value;
-
-                await _stepService.UpdateStepAsync(existingStep, userId);
-
-                return Ok(existingStep);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+        [HttpDelete("Admin/DeleteStep/{stepId:int}")]
+        public async Task<IActionResult> DeleteStep(int stepId)
+        {
+            await _svc.DeleteStepAsync(stepId);
+            return NoContent();
         }
 
         private async Task<List<string>> GetUserRoles(Guid userId)
@@ -204,30 +158,5 @@ namespace DynamicWorkflow.APIs.Controllers
                           where ur.UserId == userId
                           select r.Name).ToListAsync();
         }
-    }
-
-    public class CreateStepRequest
-    {
-        public string Name { get; set; }
-        public string? Comments { get; set; }
-        public int Order { get; set; }
-        public int WorkflowStatusId { get; set; }
-        public int ActionTypeEntityId { get; set; }
-        public int AppRoleId { get; set; }
-        public bool IsEndStep { get; set; }
-        public int WorkflowId { get; set; }
-        public Guid? AssignedUserId { get; set; }
-    }
-
-    public class UpdateStepRequest
-    {
-        public string? Name { get; set; }
-        public string? Comments { get; set; }
-        public int? Order { get; set; }
-        public int? WorkflowStatusId { get; set; }
-        public int? ActionTypeEntityId { get; set; }
-        public int? AppRoleId { get; set; }
-        public bool? IsEndStep { get; set; }
-        public Guid? AssignedUserId { get; set; }
     }
 }

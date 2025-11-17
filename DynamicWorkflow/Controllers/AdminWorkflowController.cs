@@ -1,6 +1,4 @@
-﻿using DynamicWorkflow.Core.DTOs.StepDto;
-using DynamicWorkflow.Core.DTOs.Transition;
-using DynamicWorkflow.Core.DTOs.Workflow;
+﻿using DynamicWorkflow.Core.DTOs.Workflow;
 using DynamicWorkflow.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -45,41 +43,5 @@ namespace DynamicWorkflow.APIs.Controllers
             await _svc.DeleteWorkflowAsync(id);
             return NoContent();
         }
-
-        [HttpPost("AddStep/{workflowId:int}")]
-        public async Task<IActionResult> AddStep(int workflowId, [FromBody] CreateStepDto dto)
-        {
-            var stepId = await _svc.AddStepAsync(workflowId, dto);
-            return CreatedAtAction(nameof(Get), new { id = workflowId }, new { stepId });
-        }
-
-        [HttpPut("UpdateStep/{stepId:int}")]
-        public async Task<IActionResult> UpdateStep(int stepId, [FromBody] UpdateStepDto dto)
-        {
-            await _svc.UpdateStepAsync(stepId, dto);
-            return NoContent();
-        }
-
-        [HttpDelete("DeleteStep/{stepId:int}")]
-        public async Task<IActionResult> DeleteStep(int stepId)
-        {
-            await _svc.DeleteStepAsync(stepId);
-            return NoContent();
-        }
-
-        //[HttpPost("AddTransition/{workflowId:int}")]
-        //public async Task<IActionResult> AddTransition(int workflowId, [FromBody] CreateTransitionDto dto)
-        //{
-        //    var id = await _svc.AddTransitionAsync(workflowId, dto);
-        //    return CreatedAtAction(nameof(Get), new { id = workflowId }, new { transitionId = id });
-        //}
-
-        //[HttpDelete("DeleteTransition/{id:int}")]
-        //public async Task<IActionResult> DeleteTransition(int id)
-        //{
-        //    await _svc.DeleteTransitionAsync(id);
-        //    return NoContent();
-        //}
     }
-
 }
