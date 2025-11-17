@@ -204,6 +204,38 @@ namespace DynamicWorkflow.Services.Services
                 WorkflowInstance? reloadedNextInstance = null;
                 if (nextWorkflowInstance != null)
                 {
+                    var parentId = instance.Workflow.ParentWorkflowId;
+                    var nextWorkflow = await _context.Workflows
+                        .Where(w => w.ParentWorkflowId == parentId && w.Order > instance.Workflow.Order)
+                        .OrderBy(w => w.Order)
+                        .Include(w => w.Steps)
+                        .FirstOrDefaultAsync();
+
+                    if (nextWorkflow != null)
+                    {
+                        var firstStepOfNext = nextWorkflow.Steps.OrderBy(s => s.Order).FirstOrDefault();
+                        if (firstStepOfNext != null)
+                        {
+                            nextWorkflowInstance = new WorkflowInstance
+                            {
+                                WorkflowId = nextWorkflow.Id,
+                                Workflow = nextWorkflow,
+                                CurrentStepId = firstStepOfNext.Id,
+                                CurrentStep = firstStepOfNext,
+                                WorkflowStatusId = firstStepOfNext.WorkflowStatusId,
+                                StatusText = $"Pending on {firstStepOfNext.Name}",
+                                CreatedBy = currentUser.Id.ToString(),
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            _context.WorkflowInstances.Add(nextWorkflowInstance);
+                            await _context.SaveChangesAsync();
+                            direction = "CompletedAndChained";
+                        }
+                    }
+                    else
+                    {
+                        direction = "AllWorkflowsCompleted";
+                    }
                     reloadedNextInstance = await LoadInstanceWithRelatedDataAsync(nextWorkflowInstance.Id);
                 }
 
