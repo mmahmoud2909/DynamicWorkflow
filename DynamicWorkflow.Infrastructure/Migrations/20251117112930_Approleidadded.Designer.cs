@@ -4,6 +4,7 @@ using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DynamicWorkflow.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationIdentityDbContext))]
-    partial class ApplicationIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251117112930_Approleidadded")]
+    partial class Approleidadded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -132,7 +135,7 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
-                    b.Property<int?>("AppRoleId")
+                    b.Property<int>("AppRoleId")
                         .HasColumnType("int");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -659,7 +662,8 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     b.HasOne("DynamicWorkflow.Core.Entities.AppRole", "AppRole")
                         .WithMany("Users")
                         .HasForeignKey("AppRoleId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("DynamicWorkflow.Core.Entities.Department", "Department")
                         .WithMany("Users")
