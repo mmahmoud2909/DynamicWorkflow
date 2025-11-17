@@ -67,20 +67,21 @@ namespace DynamicWorkflow.Services.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Load instance with all related data
                 var instance = await _context.WorkflowInstances
-            .Include(i => i.Workflow)
-                .ThenInclude(w => w.Steps)
-                    .ThenInclude(s => s.workflowStatus)
-            .Include(i => i.Workflow)
-                .ThenInclude(w => w.Steps)
-                    .ThenInclude(s => s.appRole)
-            .Include(i => i.CurrentStep)
-                .ThenInclude(s => s.workflowStatus)
-            .Include(i => i.CurrentStep)
-                .ThenInclude(s => s.appRole)
-            .Include(i => i.WorkflowStatus)
-            .Include(i => i.Transitions)
-            .FirstOrDefaultAsync(i => i.Id == instanceId);
+                    .Include(i => i.Workflow)
+                        .ThenInclude(w => w.Steps)
+                            .ThenInclude(s => s.workflowStatus)
+                    .Include(i => i.Workflow)
+                        .ThenInclude(w => w.Steps)
+                            .ThenInclude(s => s.appRole)
+                    .Include(i => i.CurrentStep)
+                        .ThenInclude(s => s.workflowStatus)
+                    .Include(i => i.CurrentStep)
+                        .ThenInclude(s => s.appRole)
+                    .Include(i => i.WorkflowStatus)
+                    .Include(i => i.Transitions)
+                    .FirstOrDefaultAsync(i => i.Id == instanceId);
 
                 if (instance == null)
                     throw new Exception($"Instance {instanceId} not found.");
@@ -88,6 +89,7 @@ namespace DynamicWorkflow.Services.Services
                 var currentStep = instance.Workflow.Steps.FirstOrDefault(s => s.Id == instance.CurrentStepId)
                     ?? throw new Exception("Current step not found.");
 
+                // Check if user has the required role
                 var userRoles = await (from ur in _context.UserRoles
                                        join r in _context.Roles on ur.RoleId equals r.Id
                                        where ur.UserId == currentUser.Id
@@ -110,6 +112,7 @@ namespace DynamicWorkflow.Services.Services
                 if (actionTypeEntity == null)
                     throw new Exception($"Action type with ID {actionTypeEntityId} not found.");
 
+                // --- Create transition ---
                 var transition = new WorkflowTransition
                 {
                     WorkflowId = instance.WorkflowId,
@@ -123,8 +126,8 @@ namespace DynamicWorkflow.Services.Services
                 };
 
                 string direction;
-                WorkflowInstance? nextWorkflowInstance = null;
 
+                // --- Process action ---
                 if (actionTypeEntity.Name.Equals("Accept", StringComparison.OrdinalIgnoreCase))
                 {
                     if (nextStep != null)
@@ -141,10 +144,9 @@ namespace DynamicWorkflow.Services.Services
                         var completedStatus = await _context.WorkflowStatuses
                             .FirstOrDefaultAsync(ws => ws.Name == "Completed");
                         if (completedStatus != null)
-                        {
                             instance.WorkflowStatusId = completedStatus.Id;
-                            transition.ToStatusId = completedStatus.Id;
-                        }
+
+                        transition.ToStatusId = instance.WorkflowStatusId;
                         direction = "Completed";
                     }
                 }
@@ -164,10 +166,9 @@ namespace DynamicWorkflow.Services.Services
                         var rejectedStatus = await _context.WorkflowStatuses
                             .FirstOrDefaultAsync(ws => ws.Name == "Rejected");
                         if (rejectedStatus != null)
-                        {
                             instance.WorkflowStatusId = rejectedStatus.Id;
-                            transition.ToStatusId = rejectedStatus.Id;
-                        }
+
+                        transition.ToStatusId = instance.WorkflowStatusId;
                         direction = "StartRollback";
                     }
                 }
@@ -176,13 +177,17 @@ namespace DynamicWorkflow.Services.Services
                     throw new Exception($"Unsupported action type: {actionTypeEntity.Name}");
                 }
 
+                // --- Update instance fields to store last action info ---
+                instance.PerformedBy = currentUser.Id.ToString();
                 instance.UpdatedBy = currentUser.Id.ToString();
                 instance.UpdatedAt = DateTime.UtcNow;
 
+                // Add transition
                 instance.Transitions.Add(transition);
                 _context.WorkflowTransitions.Add(transition);
 
-                var instanceStep = new WorkFlowInstanceStep
+                // Track instance step
+                _context.WorkFlowInstanceSteps.Add(new WorkFlowInstanceStep
                 {
                     InstanceId = instance.Id,
                     StepId = currentStep.Id,
@@ -192,19 +197,15 @@ namespace DynamicWorkflow.Services.Services
                     CompletedAt = DateTime.UtcNow,
                     CreatedBy = currentUser.Id.ToString(),
                     CreatedAt = DateTime.UtcNow
-                };
-                _context.WorkFlowInstanceSteps.Add(instanceStep);
+                });
 
                 await _context.SaveChangesAsync();
 
-                var reloadedInstance = await LoadInstanceWithRelatedDataAsync(instance.Id);
-                if (reloadedInstance == null)
-                    throw new Exception("Failed to reload instance after action.");
-
-                WorkflowInstance? reloadedNextInstance = null;
-                if (nextWorkflowInstance != null)
+                // --- Workflow chaining ---
+                WorkflowInstance? nextWorkflowInstance = null;
+                if (instance.Workflow.ParentWorkflowId.HasValue)
                 {
-                    var parentId = instance.Workflow.ParentWorkflowId;
+                    var parentId = instance.Workflow.ParentWorkflowId.Value;
                     var nextWorkflow = await _context.Workflows
                         .Where(w => w.ParentWorkflowId == parentId && w.Order > instance.Workflow.Order)
                         .OrderBy(w => w.Order)
@@ -229,17 +230,17 @@ namespace DynamicWorkflow.Services.Services
                             };
                             _context.WorkflowInstances.Add(nextWorkflowInstance);
                             await _context.SaveChangesAsync();
-                            direction = "CompletedAndChained";
                         }
                     }
-                    else
-                    {
-                        direction = "AllWorkflowsCompleted";
-                    }
-                    reloadedNextInstance = await LoadInstanceWithRelatedDataAsync(nextWorkflowInstance.Id);
                 }
 
                 await transaction.CommitAsync();
+
+                var reloadedInstance = await LoadInstanceWithRelatedDataAsync(instance.Id);
+                var reloadedNextInstance = nextWorkflowInstance != null
+                    ? await LoadInstanceWithRelatedDataAsync(nextWorkflowInstance.Id)
+                    : null;
+
                 return (reloadedInstance, reloadedNextInstance);
             }
             catch
