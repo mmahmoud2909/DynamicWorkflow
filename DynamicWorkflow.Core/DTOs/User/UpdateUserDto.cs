@@ -6,5 +6,7 @@
         public Guid? DepartmentId { get; set; }
         public Guid? ManagerId { get; set; }
         public bool? IsPendingDeletion { get; set; }
+        public string? AppRole { get; set; }
+        public int? AppRoleId { get; set; }
     }
 }

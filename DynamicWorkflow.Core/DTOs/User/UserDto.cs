@@ -9,6 +9,7 @@
         public string DisplayName { get; set; }
         public string? ProfilePicUrl { get; set; }
         public Guid DepartmentId { get; set; }
+        public int? AppRoleId { get; set; }
         public Guid ManagerId { get; set; }
         public DateTime RegisteredAt { get; set; }
         public string PasswordHash { get; set; }
@@ -17,7 +18,7 @@
         public bool IsPendingDeletion { get; set; }
 
         public UserDto(Guid id, string userName, string email, string displayName,
-                       Guid departmentId, Guid? managerId, bool isPendingDeletion,
+                       Guid departmentId, int? appRoleId, Guid? managerId, bool isPendingDeletion,
                        DateTime registeredAt, string? profilePicUrl)
         {
             Id = id;
@@ -25,10 +26,12 @@
             Email = email;
             DisplayName = displayName;
             DepartmentId = departmentId;
+            AppRoleId = appRoleId;
             ManagerId = managerId ?? Guid.Empty;
             IsPendingDeletion = isPendingDeletion;
             RegisteredAt = registeredAt;
             ProfilePicUrl = profilePicUrl;
+           
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using DynamicWorkflow.Core.Entities;
+﻿using DynamicWorkflow.Core.DTOs.StepDto;
+using DynamicWorkflow.Core.Entities;
 using DynamicWorkflow.Core.Entities.Users;
 
 namespace DynamicWorkflow.Core.Interfaces
@@ -11,8 +12,5 @@ namespace DynamicWorkflow.Core.Interfaces
         Task UpdateAsync(WorkflowInstance instance);
 
         Task MakeActionAsync(Workflow workflow, int stepId, int actionTypeEntityId, ApplicationUser currentUser);
-        Task<List<WorkflowStep>> GetAllStepsAsync(int workflowId);
-        Task<WorkflowStep?> GetStepByIdAsync(int stepId);
-        Task<bool> CanUserPerformStepAsync(int stepId, ApplicationUser user);
     }
 }

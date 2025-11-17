@@ -12,6 +12,8 @@ namespace DynamicWorkflow.Core.Entities.Users
         public Guid DepartmentId { get; set; }
         public Guid? ManagerId { get; set; }
         public ICollection<ApplicationRole> Roles { get; set; } = new HashSet<ApplicationRole>();
+        public AppRole? AppRole { get; set; }
         public Department Department { get; set; }
+        public int? AppRoleId { get; set; }
     }
 }
