@@ -23,6 +23,18 @@ namespace DynamicWorkflow.Infrastructure.Identity
                     .HasForeignKey(w => w.WorkflowStatusId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<ApplicationUser>()
+                    .HasOne(u => u.AppRole)
+                    .WithMany(u => u.Users)
+                    .HasForeignKey(u => u.AppRoleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<WorkflowTransition>()
+                    .HasOne(t => t.ActionTypeEntity)
+                    .WithMany(a => a.WorkflowTransitions)
+                    .HasForeignKey(t => t.ActionTypeEntityId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
         }
         public DbSet<ApplicationUser>ApplicationUsers { get; set; }
         public DbSet<ApplicationRole> ApplicationRoles { get; set; }
