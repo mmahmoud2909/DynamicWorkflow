@@ -11,6 +11,12 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
         {
             builder.ToTable("WorkflowInstances").HasKey(t => t.Id);
             //relationship instances have the same workflow
+            builder.Property(wi => wi.PerformedBy)
+                   .HasMaxLength(450);
+
+            builder.Property(wi => wi.CreatedBy)
+                   .HasMaxLength(450)
+                   .IsRequired(); 
             builder.HasOne(ins => ins.Workflow)
                 .WithMany(wf => wf.Instances)
                 .HasForeignKey(t => t.WorkflowId)

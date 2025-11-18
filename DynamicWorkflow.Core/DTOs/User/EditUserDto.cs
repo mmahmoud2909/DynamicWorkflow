@@ -10,5 +10,6 @@ namespace DynamicWorkflow.Core.DTOs.User
         public string? NewPassword { get; set; }
         public string? ConfirmNewPassword { get; set; }
         public string? Email { get; set; }
+        public int? AppRoleId { get; set; }
     }
 }

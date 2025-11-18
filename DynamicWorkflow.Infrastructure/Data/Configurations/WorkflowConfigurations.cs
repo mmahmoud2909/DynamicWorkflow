@@ -22,6 +22,12 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.Property(wfd=>wfd.Description).HasMaxLength(1000);
             //CreatedAt Property
             builder.Property(wf => wf.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            builder.Property(w => w.UpdatedBy)
+                   .HasMaxLength(450);
+
+            builder.Property(w => w.CreatedBy)
+                   .HasMaxLength(450)
+                   .IsRequired();
             //Relationships
             //Workflow=>Many Steps 
             builder.HasMany(wf=>wf.Steps)

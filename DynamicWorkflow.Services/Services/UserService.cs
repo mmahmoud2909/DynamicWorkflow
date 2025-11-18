@@ -38,12 +38,27 @@ namespace DynamicWorkflow.Services.Services
             if (!validationResult.Succeeded)
                 return validationResult;
 
-            //await UpdateUserImageAsync(dto, user);
+            // Ensure AppRoleId is set if provided
+            if (dto.AppRoleId.HasValue)
+            {
+                user.AppRoleId = dto.AppRoleId.Value;
+            }
 
             var result = await _userManager.UpdateAsync(user);
             _logger.LogInfo(nameof(UserService), result.Succeeded ? "UpdateUser succeeded" : "UpdateUser failed");
 
             return result;
+        }
+
+        // Add method to assign role to user
+        public async Task<IdentityResult> AssignRoleToUserAsync(string userId, int appRoleId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return IdentityResult.Failed(new IdentityError { Description = "User not found" });
+
+            user.AppRoleId = appRoleId;
+            return await _userManager.UpdateAsync(user);
         }
 
         public async Task<List<UserDto>> GetAllUsersAsync()

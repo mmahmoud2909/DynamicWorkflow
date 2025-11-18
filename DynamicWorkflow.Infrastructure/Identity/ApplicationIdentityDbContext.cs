@@ -3,6 +3,7 @@ using DynamicWorkflow.Core.Entities.Users;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace DynamicWorkflow.Infrastructure.Identity
 {
@@ -15,6 +16,13 @@ namespace DynamicWorkflow.Infrastructure.Identity
         {
             builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
             base.OnModelCreating(builder);
+
+           builder.Entity<Workflow>()
+                    .HasOne(w => w.WorkflowStatus)
+                    .WithMany(s => s.workflows)
+                    .HasForeignKey(w => w.WorkflowStatusId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
         }
         public DbSet<ApplicationUser>ApplicationUsers { get; set; }
         public DbSet<ApplicationRole> ApplicationRoles { get; set; }

@@ -129,7 +129,6 @@ namespace DynamicWorkflow.Services.Services
 
             await _db.SaveChangesAsync();
         }
-
         public async Task DeleteWorkflowAsync(int id)
         {
             var workflow = await _db.Workflows.FindAsync(id)
@@ -179,8 +178,8 @@ namespace DynamicWorkflow.Services.Services
             if (dto.WorkflowStatusId.HasValue) step.WorkflowStatusId = dto.WorkflowStatusId.Value;
             if (dto.Order.HasValue) step.Order = dto.Order.Value;
 
-            step.PerformedBy = userId;
-            step.UpdatedBy = userId;
+            step.PerformedBy = userId; // Ensure this is set
+            step.UpdatedBy = userId; // Ensure this is set
             step.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();

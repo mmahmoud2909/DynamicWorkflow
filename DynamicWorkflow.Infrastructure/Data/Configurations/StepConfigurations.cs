@@ -11,7 +11,15 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
             builder.ToTable("WorkflowSteps").HasKey(spk=>spk.Id);
 
             builder.Property(s=>s.Name).IsRequired().HasMaxLength(200);
+            builder.Property(ws => ws.PerformedBy)
+                   .HasMaxLength(450);
 
+            builder.Property(ws => ws.UpdatedBy)
+                   .HasMaxLength(450);
+
+            builder.Property(ws => ws.CreatedBy)
+                   .HasMaxLength(450)
+                   .IsRequired();
             builder.Property(s => s.Comments).HasMaxLength(2000);
 
             builder.Property(s=>s.isEndStep).IsRequired();

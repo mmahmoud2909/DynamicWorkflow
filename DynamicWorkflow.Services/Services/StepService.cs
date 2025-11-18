@@ -133,9 +133,6 @@ namespace DynamicWorkflow.Services.Services
             if (requiredRole != null && (userRoles.Contains(requiredRole) || userRoles.Contains("Admin")))
                 return true;
 
-            if (step.AssignedUserId.HasValue && step.AssignedUserId.Value == user.Id)
-                return true;
-
             return false;
         }
 

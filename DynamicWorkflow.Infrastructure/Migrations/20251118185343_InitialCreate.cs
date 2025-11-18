@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DynamicWorkflow.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initialcreate : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -112,6 +112,9 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     RegisteredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DepartmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ManagerId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AppRoleId = table.Column<int>(type: "int", nullable: true),
+                    AppRoleId1 = table.Column<int>(type: "int", nullable: true),
+                    ApplicationRoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -131,6 +134,22 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_AspNetUsers_AppRoles_AppRoleId",
+                        column: x => x.AppRoleId,
+                        principalTable: "AppRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_AspNetUsers_AppRoles_AppRoleId1",
+                        column: x => x.AppRoleId1,
+                        principalTable: "AppRoles",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AspNetUsers_AspNetRoles_ApplicationRoleId",
+                        column: x => x.ApplicationRoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_AspNetUsers_Departments_DepartmentId",
                         column: x => x.DepartmentId,
                         principalTable: "Departments",
@@ -149,11 +168,10 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     ParentWorkflowId = table.Column<int>(type: "int", nullable: true),
                     Order = table.Column<int>(type: "int", nullable: true),
                     WorkflowStatusId = table.Column<int>(type: "int", nullable: true),
-                    WorkflowStatusId1 = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -162,36 +180,8 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                         name: "FK_Workflows_WorkflowStatuses_WorkflowStatusId",
                         column: x => x.WorkflowStatusId,
                         principalTable: "WorkflowStatuses",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Workflows_WorkflowStatuses_WorkflowStatusId1",
-                        column: x => x.WorkflowStatusId1,
-                        principalTable: "WorkflowStatuses",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ApplicationRoleApplicationUser",
-                columns: table => new
-                {
-                    RolesId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsersId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ApplicationRoleApplicationUser", x => new { x.RolesId, x.UsersId });
-                    table.ForeignKey(
-                        name: "FK_ApplicationRoleApplicationUser_AspNetRoles_RolesId",
-                        column: x => x.RolesId,
-                        principalTable: "AspNetRoles",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ApplicationRoleApplicationUser_AspNetUsers_UsersId",
-                        column: x => x.UsersId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -293,12 +283,11 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     isEndStep = table.Column<bool>(type: "bit", nullable: false),
                     AppRoleId = table.Column<int>(type: "int", nullable: false),
                     WorkflowId = table.Column<int>(type: "int", nullable: false),
-                    AssignedUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    PerformedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PerformedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -339,11 +328,11 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     CurrentStepId = table.Column<int>(type: "int", nullable: false),
                     WorkflowStatusId = table.Column<int>(type: "int", nullable: false),
                     StatusText = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PerformedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PerformedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     ActionTypeEntityId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -433,12 +422,12 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                     FromStatusId = table.Column<int>(type: "int", nullable: true),
                     ToStatusId = table.Column<int>(type: "int", nullable: true),
                     Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PerformedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PerformedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     ActionTypeEntityId1 = table.Column<int>(type: "int", nullable: true),
                     WorkflowInstanceId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -493,11 +482,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationRoleApplicationUser_UsersId",
-                table: "ApplicationRoleApplicationUser",
-                column: "UsersId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -528,6 +512,21 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 name: "EmailIndex",
                 table: "AspNetUsers",
                 column: "NormalizedEmail");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_ApplicationRoleId",
+                table: "AspNetUsers",
+                column: "ApplicationRoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_AppRoleId",
+                table: "AspNetUsers",
+                column: "AppRoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_AppRoleId1",
+                table: "AspNetUsers",
+                column: "AppRoleId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_DepartmentId",
@@ -585,11 +584,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 name: "IX_Workflows_WorkflowStatusId",
                 table: "Workflows",
                 column: "WorkflowStatusId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Workflows_WorkflowStatusId1",
-                table: "Workflows",
-                column: "WorkflowStatusId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowSteps_ActionTypeEntityId",
@@ -656,9 +650,6 @@ namespace DynamicWorkflow.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ApplicationRoleApplicationUser");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -680,13 +671,13 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                 name: "WorkflowTransitions");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
-
-            migrationBuilder.DropTable(
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "WorkflowInstances");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Departments");

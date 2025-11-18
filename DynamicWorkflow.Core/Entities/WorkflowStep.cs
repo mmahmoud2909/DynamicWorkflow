@@ -17,7 +17,6 @@ namespace DynamicWorkflow.Core.Entities
 		[JsonIgnore]
 		public Workflow workflow { get; set; }
 		public int WorkflowId {  get; set; }
-        public Guid? AssignedUserId { get; set; }
         public string? PerformedBy { get; set; }
         public ICollection<WorkflowTransition> IncomingTransitions { get; set; } = new List<WorkflowTransition>();
 		public ICollection<WorkflowTransition> OutgoingTransitions { get; set; } = new List<WorkflowTransition>();

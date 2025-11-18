@@ -35,7 +35,15 @@ namespace DynamicWorkflow.Infrastructure.Data.Configurations
                 .WithMany()
                 .HasForeignKey(t => t.ToStatusId)
                 .OnDelete(DeleteBehavior.Restrict);
+            builder.Property(wt => wt.ActionTypeEntityId)
+                   .IsRequired();
 
+            builder.Property(wt => wt.PerformedBy)
+                   .HasMaxLength(450);
+
+            builder.Property(wt => wt.CreatedBy)
+                   .HasMaxLength(450)
+                   .IsRequired();
             builder.HasOne(t => t.ActionTypeEntity)
                 .WithMany()
                 .HasForeignKey(t => t.ActionTypeEntityId)
