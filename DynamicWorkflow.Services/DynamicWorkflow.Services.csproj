@@ -7,11 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\" />
+    <Compile Remove="Background Services\**" />
+    <Compile Remove="DTOs\**" />
+    <EmbeddedResource Remove="Background Services\**" />
+    <EmbeddedResource Remove="DTOs\**" />
+    <None Remove="Background Services\**" />
+    <None Remove="DTOs\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />                  
+    <PackageReference Include="stateless" Version="5.20.0" />
   </ItemGroup>
 
   <ItemGroup>

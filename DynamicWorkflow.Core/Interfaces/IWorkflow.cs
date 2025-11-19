@@ -1,15 +1,16 @@
-﻿using DynamicWorkflow.Core.Entities;
-using DynamicWorkflow.Core.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DynamicWorkflow.Core.DTOs.StepDto;
+using DynamicWorkflow.Core.Entities;
+using DynamicWorkflow.Core.Entities.Users;
 
 namespace DynamicWorkflow.Core.Interfaces
 {
     public interface IWorkflow
     {
-        public Task MakeAction (Workflow workflow, int stepId, ActionType action);
+        Task<WorkflowInstance?> GetByIdAsync(int id);
+        Task SaveAsync(WorkflowInstance instance);
+        Task AddAsync(WorkflowInstance instance);
+        Task UpdateAsync(WorkflowInstance instance);
+
+        Task MakeActionAsync(Workflow workflow, int stepId, int actionTypeEntityId, ApplicationUser currentUser);
     }
 }

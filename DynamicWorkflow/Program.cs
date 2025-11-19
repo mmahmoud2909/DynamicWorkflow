@@ -1,18 +1,8 @@
-using DynamicWorkflow.APIs.Extenstions;
-using DynamicWorkflow.Core.Interfaces;
-using DynamicWorkflow.Infrastructure.Identity;
-using DynamicWorkflow.Services;
+﻿using DynamicWorkflow.APIs.Extenstions;
+using DynamicWorkflow.Infrastructure.DataSeeding;
 using DynamicWorkflow.Services.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerUI;
-using System.Text;
-using System.Text.Json.Serialization;
 
 namespace DynamicWorkflow.APIs
 {
@@ -23,22 +13,51 @@ namespace DynamicWorkflow.APIs
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddAuthServices(builder.Configuration);
+            builder.Services.AddScoped<WorkflowInstanceService>();
             builder.Services.AddApplicationsService(builder.Configuration);
+            builder.Services.AddControllers()
+    .      AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
             builder.Services.AddEndpointsApiExplorer();
-            
-            //// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            //builder.Services.AddOpenApi();
-            
+
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Dynamic Workflow API", Version = "v1" });
                 c.UseInlineDefinitionsForEnums();
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter 'Bearer' [space] and then your valid token.\n\nExample: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI..."
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
             });
 
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            app.SeedData();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -76,7 +95,6 @@ namespace DynamicWorkflow.APIs
             var webRootPath = app.Environment.WebRootPath;
             if (string.IsNullOrEmpty(webRootPath))
             {
-                // Fallback to default wwwroot path
                 webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
             }
 
@@ -93,6 +111,8 @@ namespace DynamicWorkflow.APIs
                     Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads")),
                 RequestPath = "/uploads"
             });
+          
+            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -100,9 +120,7 @@ namespace DynamicWorkflow.APIs
             {
                 endpoints.MapControllers();
             });
-
             app.Run();
         }
     }
 }
-
