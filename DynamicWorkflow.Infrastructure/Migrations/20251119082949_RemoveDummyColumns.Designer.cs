@@ -4,6 +4,7 @@ using DynamicWorkflow.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DynamicWorkflow.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationIdentityDbContext))]
-    partial class ApplicationIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251119082949_RemoveDummyColumns")]
+    partial class RemoveDummyColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -211,6 +214,9 @@ namespace DynamicWorkflow.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ActionTypeEntityId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Comments")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -244,6 +250,8 @@ namespace DynamicWorkflow.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActionTypeEntityId");
 
                     b.HasIndex("InstanceId");
 
@@ -634,6 +642,10 @@ namespace DynamicWorkflow.Infrastructure.Migrations
 
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.WorkFlowInstanceStep", b =>
                 {
+                    b.HasOne("DynamicWorkflow.Core.Entities.ActionTypeEntity", null)
+                        .WithMany("WorkflowInstanceSteps")
+                        .HasForeignKey("ActionTypeEntityId");
+
                     b.HasOne("DynamicWorkflow.Core.Entities.WorkflowInstance", "Instance")
                         .WithMany()
                         .HasForeignKey("InstanceId")
@@ -836,6 +848,8 @@ namespace DynamicWorkflow.Infrastructure.Migrations
 
             modelBuilder.Entity("DynamicWorkflow.Core.Entities.ActionTypeEntity", b =>
                 {
+                    b.Navigation("WorkflowInstanceSteps");
+
                     b.Navigation("WorkflowTransitions");
 
                     b.Navigation("workflowSteps");
